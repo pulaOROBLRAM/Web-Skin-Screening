@@ -588,26 +588,15 @@
 }
 
 .connect-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
+  display: flex;
+  justify-content: center;
   align-items: center;
   margin-top: 60px;
 }
 
-.phone-icon-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.phone-3d-icon {
-  font-size: 8rem;
-  color: var(--dark-blue);
-  filter: drop-shadow(0 10px 30px rgba(30, 64, 175, 0.3));
-}
-
 .contact-form {
+  max-width: 600px;
+  width: 100%;
   background: var(--bg-white);
   padding: 40px;
   border-radius: 12px;

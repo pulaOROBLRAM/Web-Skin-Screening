@@ -228,9 +228,7 @@ function LandingPage() {
         <div className="container">
           <h2 className="section-title">Connect with us</h2>
           <div className="connect-content">
-            <div className="phone-icon-container">
-              <FontAwesomeIcon icon={faPhone} className="phone-3d-icon" />
-            </div>
+
             <div className="contact-form">
               {formStatus === 'success' ? (
                 <div className="form-success-message">
@@ -310,17 +308,7 @@ function LandingPage() {
         <FontAwesomeIcon icon={faCamera} />
       </div>
 
-      <div className="floating-nav">
-        <a href="#home" className="nav-icon-link" title="Home">
-          <FontAwesomeIcon icon={faHome} />
-        </a>
-        <a href="#about" className="nav-icon-link" title="About">
-          <FontAwesomeIcon icon={faInfoCircle} />
-        </a>
-        <a href="#how-to-use" className="nav-icon-link" title="How To Use">
-          <FontAwesomeIcon icon={faQuestionCircle} />
-        </a>
-      </div>
+
     </div>
   );
 }
