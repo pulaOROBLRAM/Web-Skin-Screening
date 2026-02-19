@@ -89,15 +89,7 @@ function LandingPage() {
             </p>
           </div>
 
-          <div className="trusted-section">
-            <p className="trusted-label">Trusted by</p>
-            <div className="brand-logos">
-              <div className="logo-placeholder">Logaipsum</div>
-              <div className="logo-placeholder">LOGOIPSUM</div>
-              <div className="logo-placeholder">logoipsum</div>
-              <div className="logo-placeholder">Logaipsum</div>
-            </div>
-          </div>
+
         </div>
       </header>
 

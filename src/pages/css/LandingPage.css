@@ -276,32 +276,7 @@
   font-weight: 500;
 }
 
-.trusted-section {
-  margin-top: 60px;
-}
 
-.trusted-label {
-  font-size: 0.85rem;
-  color: var(--text-gray);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
-  font-weight: 600;
-}
-
-.brand-logos {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-
-.logo-placeholder {
-  color: var(--text-gray);
-  font-size: 1rem;
-  opacity: 0.8;
-  font-weight: 500;
-}
 
 /* Why Section */
 .why-section {
