@@ -11,6 +11,7 @@ import {
   FaBandAid
 } from 'react-icons/fa';
 import './css/ResultsPage.css';
+import { CONFIG } from '../config';
 
 // Utility imports
 import {
@@ -415,9 +416,12 @@ function ResultsPage() {
                 <div className="recommendation-note">
                   <p>Note: For a more personalized recommendation, contact a professional.</p>
                 </div>
-                <button className="book-appointment-btn">
-                  Book an Appointment
-                </button>
+                <button 
+              className="book-appointment-btn"
+              onClick={() => window.location.href = CONFIG.BOOKING_URL}
+            >
+              Book an Appointment
+            </button>
               </div>
             </div>
           </div>

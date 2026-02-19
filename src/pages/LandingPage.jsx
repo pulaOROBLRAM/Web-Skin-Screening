@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './css/LandingPage.css';
+import { CONFIG } from '../config';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCamera, faListUl, faShieldAlt, faUserGear,
@@ -22,6 +23,10 @@ function LandingPage() {
 
   const handleStart = () => {
     navigate('/upload');
+  };
+
+  const handleBookAppointment = () => {
+    window.location.href = CONFIG.BOOKING_URL;
   };
 
   useEffect(() => {
@@ -59,6 +64,15 @@ function LandingPage() {
       <header id="home" className="hero-section">
         <div className="container animate-fade-in">
           <h1 className="hero-title">Empower Your Skin Health Journey</h1>
+          
+          <div className="hero-cta-container">
+            <button className="hero-btn primary" onClick={handleStart}>
+              <FontAwesomeIcon icon={faCamera} /> Start Free Assessment
+            </button>
+            <button className="hero-btn secondary" onClick={handleBookAppointment}>
+              <FontAwesomeIcon icon={faUserDoctor} /> Book Appointment
+            </button>
+          </div>
 
           <div className="phone-mockup-container">
             <div className="phone-mockup animate-scale-in">
