@@ -341,11 +341,10 @@ function ResultsPage() {
           <h1>Analysis Results</h1>
         </div>
 
-        {/* Analysis Section (Conditions + Image) */}
-        {/* Analysis Section (Conditions + Image) */}
+        {/* Analysis Section (Conditions | Image + Recommendations) */}
         <div className="results-analysis-container">
           
-          {/* Left Side: Conditions List */}
+          {/* Left Column: Conditions List */}
           <div className="conditions-list-container">
             <h2 className="analysis-header">Detected Conditions</h2>
             <div className="conditions-list">
@@ -373,72 +372,75 @@ function ResultsPage() {
             </div>
           </div>
 
-          {/* Right Side: Image */}
-          <div className="analysis-image-container">
-             {capturedImage ? (
-                <div className="image-wrapper">
-                  <img 
-                    src={capturedImage} 
-                    alt="Analyzed skin condition" 
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.classList.add('image-error');
-                    }} 
-                  />
+          {/* Right Column: Image + Recommendations Stack */}
+          <div className="image-recs-stack">
+            {/* Top: Image */}
+            <div className="analysis-image-container">
+               {capturedImage ? (
+                  <div className="image-wrapper">
+                    <img 
+                      src={capturedImage} 
+                      alt="Analyzed skin condition" 
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.classList.add('image-error');
+                      }} 
+                    />
+                  </div>
+                ) : (
+                  <div className="image-placeholder">
+                    <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
+                    <p>No image available</p>
+                  </div>
+                )}
+            </div>
+
+            {/* Bottom: Recommendations */}
+            <div className="recommendations-container">
+              <h2 className="analysis-header">Recommendations</h2>
+              <div className="recommendations-list">
+                {topPrediction?.recommendations && topPrediction.recommendations.length > 0 ? (
+                  topPrediction.recommendations.map((rec, index) => (
+                    <div key={index} className="recommendation-item">
+                      <FaCheckCircle className="recommendation-icon" />
+                      <span>{typeof rec === "string" ? rec : rec.text}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p>No recommendations available</p>
+                )}
+              </div>
+              
+              <div className="rec-footer-actions">
+                <div className="recommendation-note">
+                  <p>Note: For a more personalized recommendation, contact a professional.</p>
                 </div>
-              ) : (
-                <div className="image-placeholder">
-                  <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
-                  <p>No image available</p>
-                </div>
-              )}
+                <button className="book-appointment-btn">
+                  Book an Appointment
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
 
-        {/* Two Column Layout */}
-        <div className="results-two-column">
-          {/* Left Column - Self-Assessment Answers */}
-          <div className="column-left">
-            <h2 className="section-title">Self-Assessment Answers</h2>
-            <div className="answers-list">
-              {assessmentAnswers.length > 0 ? (
-                assessmentAnswers.map((item, index) => (
-                  <div key={index} className="answer-card">
-                    <span className="answer-icon">👤</span>
-                    <div className="answer-content">
-                      <p className="answer-question">{item.question}</p>
-                      <p className="answer-text">{item.answer}</p>
-                    </div>
+        {/* Self-Assessment Answers - Two Column Below */}
+        <div className="assessment-answers-section">
+          <h2 className="section-title">Self-Assessment Answers</h2>
+          <div className="answers-list">
+            {assessmentAnswers.length > 0 ? (
+              assessmentAnswers.map((item, index) => (
+                <div key={index} className="answer-card">
+                  <span className="answer-icon">👤</span>
+                  <div className="answer-content">
+                    <p className="answer-question">{item.question}</p>
+                    <p className="answer-text">{item.answer}</p>
                   </div>
-                ))
-              ) : (
-                <p>No assessment answers available</p>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Recommendations */}
-          <div className="column-right">
-            <h2 className="section-title">Recommendations</h2>
-            <div className="recommendations-list">
-              {topPrediction?.recommendations && topPrediction.recommendations.length > 0 ? (
-                topPrediction.recommendations.map((rec, index) => (
-                  <div key={index} className="recommendation-item">
-                    <FaCheckCircle className="recommendation-icon" />
-                    <span>{typeof rec === "string" ? rec : rec.text}</span>
-                  </div>
-                ))
-              ) : (
-                <p>No recommendations available</p>
-              )}
-            </div>
-            <div className="recommendation-note">
-              <p>Note: For a more personalized recommendation, contact a professional.</p>
-            </div>
-            <button className="book-appointment-btn">
-              Book an Appointment
-            </button>
+                </div>
+              ))
+            ) : (
+              <p>No assessment answers available</p>
+            )}
           </div>
         </div>
 
