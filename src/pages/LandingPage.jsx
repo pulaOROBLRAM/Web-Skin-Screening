@@ -92,7 +92,6 @@ function LandingPage() {
 
         </div>
       </header>
-
       {/* Why Use This App Section */}
       <section id="about" className="why-section reveal">
         <div className="container">
