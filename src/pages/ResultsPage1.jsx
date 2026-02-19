@@ -341,77 +341,59 @@ function ResultsPage() {
           <h1>Analysis Results</h1>
         </div>
 
-        {/* Detected Conditions */}
-        <div className="detected-conditions-section">
-          <h2 className="section-title">Detected Conditions</h2>
-          <div className="conditions-grid">
-            {allDiseaseResults.length > 0 ? (
-              allDiseaseResults.map((result, index) => {
-                // Get condition information
-                const conditionInfo = findConditionDescription(result.disease);
-                
-                // Get disease name - use info.name if available, otherwise format the disease key
-                const diseaseName = conditionInfo?.name || 
-                                  result.disease.split('_').map(word => 
-                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                                  ).join(' ') ||
-                                  result.disease.replace(/_/g, ' ');
-                
-
-
-
-                return (
-                  <div key={index} className="condition-card">
-                    <div className="condition-info">
-                      <h3>{diseaseName}</h3>
-
-
+        {/* Analysis Section (Conditions + Image) */}
+        {/* Analysis Section (Conditions + Image) */}
+        <div className="results-analysis-container">
+          
+          {/* Left Side: Conditions List */}
+          <div className="conditions-list-container">
+            <h2 className="analysis-header">Detected Conditions</h2>
+            <div className="conditions-list">
+              {allDiseaseResults.length > 0 ? (
+                allDiseaseResults.map((result, index) => {
+                  const conditionInfo = findConditionDescription(result.disease);
+                  const diseaseName = conditionInfo?.name || 
+                                    result.disease.split('_').map(word => 
+                                      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                    ).join(' ') ||
+                                    result.disease.replace(/_/g, ' ');
+                  
+                  return (
+                    <div key={index} className="condition-list-item">
+                      <div className="condition-name-text">{diseaseName}</div>
+                      <div className="progress-circle" style={{'--progress': result.percentage}}>
+                        <span className="progress-value">{result.percentage}%</span>
+                      </div>
                     </div>
-                    <div className="progress-circle" style={{'--progress': result.percentage}}>
-                      <span className="progress-value">{result.percentage}%</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="condition-card">
-                <div className="condition-info">
-                  <h3>No Conditions Detected</h3>
-
-
-                </div>
-                <div className="progress-circle" style={{'--progress': 0}}>
-                  <span className="progress-value">0%</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Skin Image */}
-        <div className="skin-image-section">
-          {capturedImage ? (
-            <>
-              <img 
-                src={capturedImage} 
-                alt="Analyzed skin condition" 
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  const placeholder = e.target.parentElement.querySelector('.image-placeholder');
-                  if (placeholder) placeholder.style.display = 'flex';
-                }} 
-              />
-              <div className="image-placeholder" style={{display: 'none'}}>
-                <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
-                <p>Failed to load image</p>
-              </div>
-            </>
-          ) : (
-            <div className="image-placeholder">
-              <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
-              <p>No image available</p>
+                  );
+                })
+              ) : (
+                <div className="no-conditions">No Conditions Detected</div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Right Side: Image */}
+          <div className="analysis-image-container">
+             {capturedImage ? (
+                <div className="image-wrapper">
+                  <img 
+                    src={capturedImage} 
+                    alt="Analyzed skin condition" 
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('image-error');
+                    }} 
+                  />
+                </div>
+              ) : (
+                <div className="image-placeholder">
+                  <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
+                  <p>No image available</p>
+                </div>
+              )}
+          </div>
+
         </div>
 
         {/* Two Column Layout */}
