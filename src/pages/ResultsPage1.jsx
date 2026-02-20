@@ -187,19 +187,22 @@ function ResultsPage() {
           </div>
 
           <div class="section">
-            <div class="section-title">Top Detected Conditions</div>
-            <table>
+            <div class="section-title">Screening Results: Top Detected Conditions</div>
+            <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
               <thead>
-                <tr>
-                  <th>Condition</th>
-                  <th>Confidence Percentage</th>
+                <tr style="background-color: #f1f5f9;">
+                  <th style="padding: 15px; border: none;">Potential Condition</th>
+                  <th style="padding: 15px; border: none; text-align: center;">Confidence Level</th>
                 </tr>
               </thead>
               <tbody>
-                ${allDiseaseResults.slice(0, 4).map(res => `
-                  <tr>
-                    <td>${res.disease.replace(/_/g, ' ')}</td>
-                    <td>${res.percentage}%</td>
+                ${allDiseaseResults.slice(0, 4).map((res, idx) => `
+                  <tr style="background-color: ${idx === 0 ? '#f0f7ff' : '#ffffff'};">
+                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: ${idx === 0 ? '700' : '400'};">
+                      ${res.disease.replace(/_/g, ' ')}
+                      ${idx === 0 ? '<span style="margin-left: 10px; font-size: 0.75rem; background-color: #dbeafe; color: #1e3a8a; padding: 2px 8px; border-radius: 4px;">PRIMARY MATCH</span>' : ''}
+                    </td>
+                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #1e3a8a;">${res.percentage}%</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -207,19 +210,19 @@ function ResultsPage() {
           </div>
 
           <div class="section">
-            <div class="section-title">Self-Assessment Data</div>
-            <table>
+            <div class="section-title">Clinical Intake & Symptoms</div>
+            <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
               <thead>
-                <tr>
-                  <th>Question</th>
-                  <th>User Answer</th>
+                <tr style="background-color: #f1f5f9;">
+                  <th style="padding: 15px; border: none; width: 60%;">Assessment Question</th>
+                  <th style="padding: 15px; border: none;">Patient Response</th>
                 </tr>
               </thead>
               <tbody>
-                ${assessmentAnswers.map(item => `
-                  <tr>
-                    <td>${item.question}</td>
-                    <td>${item.answer}</td>
+                ${assessmentAnswers.map((item, idx) => `
+                  <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0;">${item.question}</td>
+                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: 600; color: #1e3a8a;">${item.answer}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -229,9 +232,23 @@ function ResultsPage() {
           <div class="section">
             <div class="section-title">Clinical Recommendations</div>
             <div class="recommendations">
-              ${topPrediction?.recommendations?.map(rec => `
-                <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
-              `).join('') || 'No recommendations available'}
+              ${(topPrediction?.recommendations && topPrediction.recommendations.length > 0) 
+                ? topPrediction.recommendations.map(rec => `
+                    <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
+                  `).join('')
+                : `
+                    <div class="recommendation-item">Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</div>
+                    <div class="recommendation-item">Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</div>
+                    <div class="recommendation-item">Monitor the area for any changes in size, shape, color, or texture.</div>
+                  `
+              }
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Clinical Analysis Notes</div>
+            <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; color: #4b5563;">
+              ${topPrediction?.causes ? topPrediction.causes : "This condition requires a professional visual examination. Avoid self-treatment until a dermatologist has confirmed the diagnosis."}
             </div>
           </div>
 
