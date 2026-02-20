@@ -230,9 +230,9 @@ function ResultsPage() {
           </div>
 
           <div class="section">
-            <div class="section-title">Clinical Recommendations</div>
+            <div class="section-title">Clinical Recommendation Summary</div>
             <div class="recommendations">
-              ${(topPrediction?.recommendations && topPrediction.recommendations.length > 0) 
+              ${(topPrediction?.recommendations && topPrediction.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
                 ? topPrediction.recommendations.map(rec => `
                     <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
                   `).join('')
@@ -246,9 +246,11 @@ function ResultsPage() {
           </div>
 
           <div class="section">
-            <div class="section-title">Clinical Analysis Notes</div>
-            <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; color: #4b5563;">
-              ${topPrediction?.causes ? topPrediction.causes : "This condition requires a professional visual examination. Avoid self-treatment until a dermatologist has confirmed the diagnosis."}
+            <div class="section-title">Dermatological Analysis Notes</div>
+            <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
+              ${(topPrediction?.causes && topPrediction.causes.trim()) 
+                ? topPrediction.causes 
+                : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
             </div>
           </div>
 
@@ -420,7 +422,7 @@ function ResultsPage() {
             <div className="recommendations-container">
               <h2 className="analysis-header">Recommendations</h2>
               <div className="recommendations-list">
-                {topPrediction?.recommendations && topPrediction.recommendations.length > 0 ? (
+                {topPrediction?.recommendations && topPrediction.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0 ? (
                   topPrediction.recommendations.map((rec, index) => (
                     <div key={index} className="recommendation-item">
                       <FaCheckCircle className="recommendation-icon" />
@@ -450,7 +452,7 @@ function ResultsPage() {
                   <FaListUl /> Recommended Analysis Notes
                 </div>
                 <div className="clinical-notes-text">
-                  {topPrediction?.causes ? topPrediction.causes : "This condition requires a professional visual examination. Avoid self-treatment until a dermatologist has confirmed the diagnosis."}
+                  {(topPrediction?.causes && topPrediction.causes.trim()) ? topPrediction.causes : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path."}
                 </div>
               </div>
 
