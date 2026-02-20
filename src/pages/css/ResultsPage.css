@@ -441,10 +441,14 @@ body {
 }
 
 .conditions-list-container {
-  flex: 1;
+  flex: 0.8;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: sticky;
+  top: 100px;
+  height: fit-content;
+  align-self: flex-start;
 }
 
 .analysis-header {
@@ -515,7 +519,7 @@ body {
 .image-recs-stack {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1.2;
   gap: 24px;
   min-width: 0;
 }
