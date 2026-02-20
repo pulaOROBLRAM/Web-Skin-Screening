@@ -359,8 +359,11 @@ function ResultsPage() {
                                     result.disease.replace(/_/g, ' ');
                   
                   return (
-                    <div key={index} className="condition-list-item">
-                      <div className="condition-name-text">{diseaseName}</div>
+                    <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`}>
+                      <div className="condition-name-container">
+                        {index === 0 && <span className="top-match-badge">Primary Match</span>}
+                        <div className="condition-name-text">{diseaseName}</div>
+                      </div>
                       <div className="progress-circle" style={{'--progress': result.percentage}}>
                         <span className="progress-value">{result.percentage}%</span>
                       </div>
@@ -408,13 +411,35 @@ function ResultsPage() {
                     </div>
                   ))
                 ) : (
-                  <p>No recommendations available</p>
+                  <>
+                    <div className="recommendation-item">
+                      <FaCheckCircle className="recommendation-icon" />
+                      <span>Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</span>
+                    </div>
+                    <div className="recommendation-item">
+                      <FaCheckCircle className="recommendation-icon" />
+                      <span>Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</span>
+                    </div>
+                    <div className="recommendation-item">
+                      <FaCheckCircle className="recommendation-icon" />
+                      <span>Monitor the area for any changes in size, shape, color, or texture.</span>
+                    </div>
+                  </>
                 )}
               </div>
               
+              <div className="clinical-notes-container">
+                <div className="clinical-notes-title">
+                  <FaListUl /> Recommended Analysis Notes
+                </div>
+                <div className="clinical-notes-text">
+                  {topPrediction?.causes ? topPrediction.causes : "This condition requires a professional visual examination. Avoid self-treatment until a dermatologist has confirmed the diagnosis."}
+                </div>
+              </div>
+
               <div className="rec-footer-actions">
                 <div className="recommendation-note">
-                  <p>Note: For a more personalized recommendation, contact a professional.</p>
+                  <p><strong>Clinical Note:</strong> This AI-driven assessment is designed for preliminary screening. It cross-references visual patterns with clinical data to provide insights into potential skin conditions.</p>
                 </div>
                 <button 
               className="book-appointment-btn"

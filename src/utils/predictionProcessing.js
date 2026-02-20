@@ -24,7 +24,8 @@ export function getTopPredictionWithDetails(predictions) {
         description1: desc.description1,
         treatment: desc.treatment || "Unknown",
         recommendations: desc.recommendations || [],
-        severity: desc.severity || "Unknown"
+        severity: desc.severity || "Unknown",
+        causes: desc.causes || ""
       };
     })
     .sort((a, b) => b.probability - a.probability);
