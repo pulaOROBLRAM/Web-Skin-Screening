@@ -661,6 +661,8 @@ body {
   
   .conditions-list-container {
     min-width: unset;
+    position: relative;
+    top: auto;
   }
 
   .image-recs-stack {

@@ -88,6 +88,83 @@ function ResultsPage() {
         ? 'moderate'
         : 'low';
 
+  const getAllCategoriesResults = () => {
+    const results = [];
+    
+    if (isAdaptive && diseaseScores && Object.keys(diseaseScores).length > 0) {
+      const topPredString = getTopPrediction(predictions);
+      const targetCategory = getTargetCategory(topPredString);
+      const categoryData = diseaseScores;
+
+      if (categoryData && Object.keys(categoryData).length > 0) {
+        const allDiseases = Object.entries(categoryData)
+          .map(([disease, score]) => ({
+            disease,
+            score,
+            category: targetCategory
+          }));
+        
+        results.push(...allDiseases);
+      }
+    } else if (assessmentData) {
+      const categories = ['INFLAMMATORY', 'INFECTIOUS', 'AUTOIMMUNE', 'BENIGN_GROWTH', 'PIGMENTARY', 'SKIN_CANCER', 'ENVIRONMENTAL'];
+      
+      categories.forEach(category => {
+        const weightedCategories = calculateWeightedResults(assessmentData, topPrediction?.condition);
+        const categoryData = weightedCategories?.[category];
+        
+        if (categoryData && Object.keys(categoryData).length > 0) {
+          const categoryDiseases = Object.entries(categoryData)
+            .map(([disease, score]) => ({
+              disease,
+              score,
+              category: category
+            }));
+          
+          results.push(...categoryDiseases);
+        }
+      });
+    }
+
+    // First, sort all results by score
+    const sortedResults = results.sort((a, b) => b.score - a.score);
+    
+    // Take top 4 results
+    const TOP_RESULTS_COUNT = 4;
+    const topResults = sortedResults.slice(0, TOP_RESULTS_COUNT);
+    
+    // Calculate total score based ONLY on top results
+    const topResultsTotal = topResults.reduce((sum, item) => sum + item.score, 0);
+    
+    // Calculate percentages based on top results total
+    const finalResults = topResults.map(item => {
+      const percentage = topResultsTotal > 0 ? (item.score / topResultsTotal) * 100 : 0;
+      
+      return {
+        disease: item.disease,
+        percentage: Number(percentage.toFixed(0)), // Round to whole number
+        score: item.score,
+        category: item.category
+      };
+    });
+
+    console.log('Top results with recalculated percentages:', finalResults);
+    console.log('Sum of percentages:', finalResults.reduce((sum, r) => sum + r.percentage, 0));
+
+    return finalResults;
+  };
+
+  const allDiseaseResults = getAllCategoriesResults();
+  
+  // Get the enriched details for the primary match (weighted result)
+  const primaryMatch = allDiseaseResults.length > 0 ? allDiseaseResults[0] : null;
+  const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.disease) : null;
+  
+  // Fallback to topPrediction if primaryMatch details are missing
+  const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0) 
+    ? primaryMatchDetails 
+    : topPrediction;
+
   const handleDownloadReport = () => {
     const reportContent = `
       <html>
@@ -232,8 +309,8 @@ function ResultsPage() {
           <div class="section">
             <div class="section-title">Clinical Recommendation Summary</div>
             <div class="recommendations">
-              ${(topPrediction?.recommendations && topPrediction.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
-                ? topPrediction.recommendations.map(rec => `
+              ${(displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
+                ? displayCondition.recommendations.map(rec => `
                     <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
                   `).join('')
                 : `
@@ -248,8 +325,8 @@ function ResultsPage() {
           <div class="section">
             <div class="section-title">Dermatological Analysis Notes</div>
             <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
-              ${(topPrediction?.causes && topPrediction.causes.trim()) 
-                ? topPrediction.causes 
+              ${(displayCondition?.causes && displayCondition.causes.trim()) 
+                ? displayCondition.causes 
                 : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
             </div>
           </div>
@@ -273,73 +350,7 @@ function ResultsPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const getAllCategoriesResults = () => {
-    const results = [];
-    
-    if (isAdaptive && diseaseScores && Object.keys(diseaseScores).length > 0) {
-      const topPredString = getTopPrediction(predictions);
-      const targetCategory = getTargetCategory(topPredString);
-      const categoryData = diseaseScores;
 
-      if (categoryData && Object.keys(categoryData).length > 0) {
-        const allDiseases = Object.entries(categoryData)
-          .map(([disease, score]) => ({
-            disease,
-            score,
-            category: targetCategory
-          }));
-        
-        results.push(...allDiseases);
-      }
-    } else if (assessmentData) {
-      const categories = ['INFLAMMATORY', 'INFECTIOUS', 'AUTOIMMUNE', 'BENIGN_GROWTH', 'PIGMENTARY', 'SKIN_CANCER', 'ENVIRONMENTAL'];
-      
-      categories.forEach(category => {
-        const weightedCategories = calculateWeightedResults(assessmentData, topPrediction?.condition);
-        const categoryData = weightedCategories?.[category];
-        
-        if (categoryData && Object.keys(categoryData).length > 0) {
-          const categoryDiseases = Object.entries(categoryData)
-            .map(([disease, score]) => ({
-              disease,
-              score,
-              category: category
-            }));
-          
-          results.push(...categoryDiseases);
-        }
-      });
-    }
-
-    // First, sort all results by score
-    const sortedResults = results.sort((a, b) => b.score - a.score);
-    
-    // Take top 4 results
-    const TOP_RESULTS_COUNT = 4;
-    const topResults = sortedResults.slice(0, TOP_RESULTS_COUNT);
-    
-    // Calculate total score based ONLY on top results
-    const topResultsTotal = topResults.reduce((sum, item) => sum + item.score, 0);
-    
-    // Calculate percentages based on top results total
-    const finalResults = topResults.map(item => {
-      const percentage = topResultsTotal > 0 ? (item.score / topResultsTotal) * 100 : 0;
-      
-      return {
-        disease: item.disease,
-        percentage: Number(percentage.toFixed(0)), // Round to whole number
-        score: item.score,
-        category: item.category
-      };
-    });
-
-    console.log('Top results with recalculated percentages:', finalResults);
-    console.log('Sum of percentages:', finalResults.reduce((sum, r) => sum + r.percentage, 0));
-
-    return finalResults;
-  };
-
-  const allDiseaseResults = getAllCategoriesResults();
 
   return (
     <div className="results-container">
@@ -422,8 +433,8 @@ function ResultsPage() {
             <div className="recommendations-container">
               <h2 className="analysis-header">Recommendations</h2>
               <div className="recommendations-list">
-                {topPrediction?.recommendations && topPrediction.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0 ? (
-                  topPrediction.recommendations.map((rec, index) => (
+                {displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0 ? (
+                  displayCondition.recommendations.map((rec, index) => (
                     <div key={index} className="recommendation-item">
                       <FaCheckCircle className="recommendation-icon" />
                       <span>{typeof rec === "string" ? rec : rec.text}</span>
@@ -452,7 +463,7 @@ function ResultsPage() {
                   <FaListUl /> Recommended Analysis Notes
                 </div>
                 <div className="clinical-notes-text">
-                  {(topPrediction?.causes && topPrediction.causes.trim()) ? topPrediction.causes : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path."}
+                  {(displayCondition?.causes && displayCondition.causes.trim()) ? displayCondition.causes : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path."}
                 </div>
               </div>
 
