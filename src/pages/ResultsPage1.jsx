@@ -9,7 +9,8 @@ import {
   FaHome,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaBandAid
+  FaBandAid,
+  FaStethoscope
 } from 'react-icons/fa';
 import './css/ResultsPage.css';
 import { CONFIG } from '../config';
@@ -381,7 +382,10 @@ function ResultsPage() {
       {/* Header Navigation */}
       <nav className="results-nav">
         <div className="nav-content">
-          <div className="nav-logo">SkinSight AI</div>
+          <div className="nav-logo" style={{ display: 'flex', alignItems: 'center' }}>
+            <FaStethoscope style={{ marginRight: '10px', color: '#10b981' }} />
+            SkinSight AI
+          </div>
           <div className="nav-links">
             <a href="#home" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
             <a href="#about">About</a>

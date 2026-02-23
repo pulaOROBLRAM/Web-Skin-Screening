@@ -9,6 +9,8 @@ import {
   faPhone, faImage, faHome, faInfoCircle, faQuestionCircle
 } from '@fortawesome/free-solid-svg-icons';
 
+import { FaStethoscope } from 'react-icons/fa';
+
 function LandingPage() {
   const navigate = useNavigate();
   const [formStatus, setFormStatus] = useState('');
@@ -47,7 +49,10 @@ function LandingPage() {
       {/* Header */}
       <nav className="navbar">
         <div className="nav-container">
-          <div className="logo">SkinSight AI</div>
+          <div className="logo">
+            <FaStethoscope className="logo-icon" style={{ marginRight: '10px', color: '#10b981' }} />
+            SkinSight AI
+          </div>
 
           <div className="nav-links">
             <a href="#home">Home</a>
