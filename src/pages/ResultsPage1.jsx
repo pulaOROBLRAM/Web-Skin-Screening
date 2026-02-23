@@ -404,6 +404,13 @@ function ResultsPage() {
                 <div className="no-conditions">No Conditions Detected</div>
               )}
             </div>
+
+
+
+            {/* Clinical Disclaimer moved here */}
+            <div className="recommendation-note">
+              <p><strong>Clinical Note:</strong> This AI-driven assessment is designed for preliminary screening. It cross-references visual patterns with clinical data to provide insights into potential skin conditions.</p>
+            </div>
           </div>
 
           {/* Right Column: Image + Recommendations Stack */}
@@ -458,19 +465,7 @@ function ResultsPage() {
                 )}
               </div>
               
-              <div className="clinical-notes-container">
-                <div className="clinical-notes-title">
-                  <FaListUl /> Recommended Analysis Notes
-                </div>
-                <div className="clinical-notes-text">
-                  {(displayCondition?.causes && displayCondition.causes.trim()) ? displayCondition.causes : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path."}
-                </div>
-              </div>
-
               <div className="rec-footer-actions">
-                <div className="recommendation-note">
-                  <p><strong>Clinical Note:</strong> This AI-driven assessment is designed for preliminary screening. It cross-references visual patterns with clinical data to provide insights into potential skin conditions.</p>
-                </div>
                 <button 
               className="book-appointment-btn"
               onClick={() => window.location.href = CONFIG.BOOKING_URL}

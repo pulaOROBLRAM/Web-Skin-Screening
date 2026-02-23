@@ -448,6 +448,7 @@ body {
   position: sticky;
   top: 100px;
   height: fit-content;
+  gap: 24px;
   align-self: flex-start;
 }
 
