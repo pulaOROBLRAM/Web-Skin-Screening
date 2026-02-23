@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/free-solid-svg-icons';
@@ -52,6 +53,15 @@ function ResultsPage() {
   const assessmentQuestions = location.state?.assessmentQuestions; // This is key!
   const diseaseScores = location.state?.diseaseScores;
   const isAdaptive = location.state?.adaptive || false;
+
+  const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
+
+  const handleToggleSetting = (setting) => {
+    setReportSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+  };
 
   const assessmentAnswers = formatAssessmentAnswers(assessmentData, assessmentQuestions);
 
@@ -166,10 +176,93 @@ function ResultsPage() {
     : topPrediction;
 
   const handleDownloadReport = () => {
+    const settings = reportSettings;
+    
+    // Modular Section Helpers
+    const imageSection = settings.includeImage ? `
+      <div class="section">
+        <div class="section-title">Analysis Image</div>
+        <div class="image-container">
+          <img src="${capturedImage}" alt="Skin Analysis Image"/>
+        </div>
+      </div>` : '';
+
+    const resultsSection = `
+      <div class="section">
+        <div class="section-title">Screening Results: Top Detected Conditions</div>
+        <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <thead>
+            <tr style="background-color: #f1f5f9;">
+              <th style="padding: 15px; border: none;">Potential Condition</th>
+              <th style="padding: 15px; border: none; text-align: center;">Confidence Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allDiseaseResults.slice(0, 4).map((res, idx) => `
+              <tr style="background-color: ${idx === 0 ? '#f0f7ff' : '#ffffff'};">
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: ${idx === 0 ? '700' : '400'};">
+                  ${res.disease.replace(/_/g, ' ')}
+                  ${idx === 0 ? `<span style="margin-left: 10px; font-size: 0.75rem; background-color: #dbeafe; color: ${settings.primaryColor}; padding: 2px 8px; border-radius: 4px;">PRIMARY MATCH</span>` : ''}
+                </td>
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${settings.primaryColor};">${res.percentage}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    const assessmentSection = settings.includeAssessmentAnswers ? `
+      <div class="section">
+        <div class="section-title">Clinical Intake & Symptoms</div>
+        <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <thead>
+            <tr style="background-color: #f1f5f9;">
+              <th style="padding: 15px; border: none; width: 60%;">Assessment Question</th>
+              <th style="padding: 15px; border: none;">Patient Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${assessmentAnswers.map((item, idx) => `
+              <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0;">${item.question}</td>
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: 600; color: ${settings.primaryColor};">${item.answer}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>` : '';
+
+    const recommendationsSection = settings.includeRecommendations ? `
+      <div class="section">
+        <div class="section-title">Clinical Recommendation Summary</div>
+        <div class="recommendations">
+          ${(displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
+            ? displayCondition.recommendations.map(rec => `
+                <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
+              `).join('')
+            : `
+                <div class="recommendation-item">Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</div>
+                <div class="recommendation-item">Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</div>
+                <div class="recommendation-item">Monitor the area for any changes in size, shape, color, or texture.</div>
+              `
+          }
+        </div>
+      </div>` : '';
+
+    const analysisNotesSection = settings.includeAnalysisNotes ? `
+      <div class="section">
+        <div class="section-title">Dermatological Analysis Notes</div>
+        <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid ${settings.primaryColor}; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
+          ${(displayCondition?.causes && displayCondition.causes.trim()) 
+            ? displayCondition.causes 
+            : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
+        </div>
+      </div>` : '';
+
     const reportContent = `
       <html>
         <head>
-          <title>SkinSight AI Analysis Report</title>
+          <title>${settings.companyName} Analysis Report</title>
           <style>
             body { 
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -179,11 +272,11 @@ function ResultsPage() {
             }
             .header {
               text-align: center;
-              border-bottom: 2px solid #1e3a8a;
+              border-bottom: 2px solid ${settings.primaryColor};
               margin-bottom: 30px;
               padding-bottom: 20px;
             }
-            .header h1 { color: #1e3a8a; margin: 0; }
+            .header h1 { color: ${settings.primaryColor}; margin: 0; }
             .meta-info {
               display: flex;
               justify-content: space-between;
@@ -195,7 +288,7 @@ function ResultsPage() {
             .section-title {
               font-size: 1.2rem;
               font-weight: bold;
-              color: #1e3a8a;
+              color: ${settings.primaryColor};
               border-bottom: 1px solid #e5e7eb;
               margin-bottom: 15px;
               padding-bottom: 5px;
@@ -212,7 +305,7 @@ function ResultsPage() {
             }
             th {
               background-color: #f8fafc;
-              color: #1e3a8a;
+              color: ${settings.primaryColor};
               font-weight: 600;
             }
             .image-container {
@@ -233,7 +326,7 @@ function ResultsPage() {
               content: "•";
               position: absolute;
               left: 0;
-              color: #1e3a8a;
+              color: ${settings.primaryColor};
               font-weight: bold;
             }
             .footer {
@@ -248,7 +341,7 @@ function ResultsPage() {
         </head>
         <body>
           <div class="header">
-            <h1>SkinSight AI Analysis Report</h1>
+            <h1>${settings.companyName} Analysis Report</h1>
           </div>
 
           <div class="meta-info">
@@ -256,84 +349,15 @@ function ResultsPage() {
             <span>Generated: ${new Date().toLocaleString()}</span>
           </div>
 
-          <div class="section">
-            <div class="section-title">Analysis Image</div>
-            <div class="image-container">
-              <img src="${capturedImage}" alt="Skin Analysis Image"/>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Screening Results: Top Detected Conditions</div>
-            <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <thead>
-                <tr style="background-color: #f1f5f9;">
-                  <th style="padding: 15px; border: none;">Potential Condition</th>
-                  <th style="padding: 15px; border: none; text-align: center;">Confidence Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${allDiseaseResults.slice(0, 4).map((res, idx) => `
-                  <tr style="background-color: ${idx === 0 ? '#f0f7ff' : '#ffffff'};">
-                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: ${idx === 0 ? '700' : '400'};">
-                      ${res.disease.replace(/_/g, ' ')}
-                      ${idx === 0 ? '<span style="margin-left: 10px; font-size: 0.75rem; background-color: #dbeafe; color: #1e3a8a; padding: 2px 8px; border-radius: 4px;">PRIMARY MATCH</span>' : ''}
-                    </td>
-                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #1e3a8a;">${res.percentage}%</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Clinical Intake & Symptoms</div>
-            <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <thead>
-                <tr style="background-color: #f1f5f9;">
-                  <th style="padding: 15px; border: none; width: 60%;">Assessment Question</th>
-                  <th style="padding: 15px; border: none;">Patient Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${assessmentAnswers.map((item, idx) => `
-                  <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0;">${item.question}</td>
-                    <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: 600; color: #1e3a8a;">${item.answer}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Clinical Recommendation Summary</div>
-            <div class="recommendations">
-              ${(displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
-                ? displayCondition.recommendations.map(rec => `
-                    <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
-                  `).join('')
-                : `
-                    <div class="recommendation-item">Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</div>
-                    <div class="recommendation-item">Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</div>
-                    <div class="recommendation-item">Monitor the area for any changes in size, shape, color, or texture.</div>
-                  `
-              }
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Dermatological Analysis Notes</div>
-            <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
-              ${(displayCondition?.causes && displayCondition.causes.trim()) 
-                ? displayCondition.causes 
-                : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
-            </div>
-          </div>
+          ${imageSection}
+          ${resultsSection}
+          ${assessmentSection}
+          ${recommendationsSection}
+          ${analysisNotesSection}
 
           <div class="footer">
             <p>This report is generated by AI for informational purposes only and does not substitute professional medical advice.</p>
-            <p>© 2025 SkinSight AI. All rights reserved.</p>
+            <p>© 2025 ${settings.companyName}. All rights reserved.</p>
           </div>
         </body>
       </html>
@@ -495,6 +519,47 @@ function ResultsPage() {
             ) : (
               <p>No assessment answers available</p>
             )}
+          </div>
+        </div>
+
+        {/* Report Download Configuration UI */}
+        <div className="report-config-panel">
+          <div className="report-config-title">
+            <FaDownload /> Report Download Options
+          </div>
+          <div className="config-toggles">
+            <label className="toggle-item">
+              <input 
+                type="checkbox" 
+                checked={reportSettings.includeImage} 
+                onChange={() => handleToggleSetting('includeImage')}
+              />
+              <span className="toggle-label">Include Image</span>
+            </label>
+            <label className="toggle-item">
+              <input 
+                type="checkbox" 
+                checked={reportSettings.includeRecommendations} 
+                onChange={() => handleToggleSetting('includeRecommendations')}
+              />
+              <span className="toggle-label">Include Recommendations</span>
+            </label>
+            <label className="toggle-item">
+              <input 
+                type="checkbox" 
+                checked={reportSettings.includeAssessmentAnswers} 
+                onChange={() => handleToggleSetting('includeAssessmentAnswers')}
+              />
+              <span className="toggle-label">Include Assessment Answers</span>
+            </label>
+            <label className="toggle-item">
+              <input 
+                type="checkbox" 
+                checked={reportSettings.includeAnalysisNotes} 
+                onChange={() => handleToggleSetting('includeAnalysisNotes')}
+              />
+              <span className="toggle-label">Include Analysis Notes</span>
+            </label>
           </div>
         </div>
 
