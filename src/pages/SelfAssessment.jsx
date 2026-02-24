@@ -1,28 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faArrowLeft, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faArrowLeft, faHome, faStethoscope } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './css/SelfAssessment.css';
 import { DISEASES } from './ConditionAttr';
-import { getPersonalizedQuestions, getTargetCategory } from './selfAssessmentQuestions'
+import {
+  TRIAGE_QUESTIONS,
+  resolveCategory,
+  getQuestionsForCategory,
+  getTopPrediction,
+  getTargetCategory
+} from './selfAssessmentQuestions';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 const handleAnswer = (setAnswers, questionId, answer) => {
-  setAnswers(prev => ({
-    ...prev,
-    [questionId]: answer
-  }));
+  setAnswers(prev => ({ ...prev, [questionId]: answer }));
 };
 
 const ASSESSMENT_MAPPING = {
-  1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 
+  1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5,
   7: 6, 8: 7, 9: 8, 10: 9, 11: 10, 12: 11
 };
 
-
 const calculateArrayAverage = (arr) => {
   if (arr.length === 0) return 0;
-  const sum = arr.reduce((total, val) => total + val, 0);
-  return sum / arr.length;
+  return arr.reduce((total, val) => total + val, 0) / arr.length;
 };
 
 const getAnswerValue = (answer) => {
@@ -30,10 +34,7 @@ const getAnswerValue = (answer) => {
 };
 
 const calculateDiseaseAverages = (diseaseCategoryObject) => {
-  if (!diseaseCategoryObject || typeof diseaseCategoryObject !== 'object') {
-    return {};
-  }
-
+  if (!diseaseCategoryObject || typeof diseaseCategoryObject !== 'object') return {};
   const DISEASE_AVERAGES = {};
   for (const [disease, data] of Object.entries(diseaseCategoryObject)) {
     if (data && data.weights && Array.isArray(data.weights)) {
@@ -64,20 +65,12 @@ const CATEGORY_THRESHOLDS = {
   'DEFAULT': 40
 };
 
-
-const calculateWeightedResults = (assessmentAnswers, topPredictionCondition) => {
+const calculateWeightedResults = (assessmentAnswers, categoryKey) => {
   const results = {};
+  if (!assessmentAnswers || Object.keys(assessmentAnswers).length === 0) return results;
 
-  if (!assessmentAnswers || Object.keys(assessmentAnswers).length === 0) {
-    return results;
-  }
-
-  const targetCategoryKey = getTargetCategory(topPredictionCondition);
-  const targetCategoryDiseases = CATEGORY_SCORE_MAP[targetCategoryKey];
-
-  if (!targetCategoryDiseases) {
-    return results;
-  }
+  const targetCategoryDiseases = CATEGORY_SCORE_MAP[categoryKey];
+  if (!targetCategoryDiseases) return results;
 
   const targetDiseaseAverages = calculateDiseaseAverages(targetCategoryDiseases);
 
@@ -92,7 +85,6 @@ const calculateWeightedResults = (assessmentAnswers, topPredictionCondition) => 
 
       if (attributeIndex !== undefined && weights[attributeIndex] !== undefined) {
         const characteristicValue = attributes[attributeIndex] || 0;
-
         if (answerValue !== characteristicValue) {
           totalWeight -= targetDiseaseAverages[diseaseName];
         } else {
@@ -107,68 +99,120 @@ const calculateWeightedResults = (assessmentAnswers, topPredictionCondition) => 
     results[diseaseName] = Math.max(0, totalWeight);
   });
 
-  return { [targetCategoryKey]: results };
+  return { [categoryKey]: results };
 };
 
 const checkDiseaseThreshold = (scores, category = 'DEFAULT') => {
   if (!scores || Object.keys(scores).length === 0) return false;
-
   const threshold = CATEGORY_THRESHOLDS[category] || CATEGORY_THRESHOLDS.DEFAULT;
-
-  const top3 = Object.entries(scores)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-
-  const total = top3.reduce((sum, [, score]) => sum + score, 0);
+  const top3 = Object.entries(scores).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const filteredTop3 = top3.filter(([, score]) => score > 0);
   const filteredTotal = filteredTop3.reduce((sum, [, score]) => sum + score, 0);
-
   if (filteredTop3.length === 0) return false;
-
-  for (const [disease, score] of filteredTop3) {
+  for (const [, score] of filteredTop3) {
     const percentage = (score / filteredTotal) * 100;
-    if (percentage >= threshold) {
-      return true;
-    }
+    if (percentage >= threshold) return true;
   }
-
   return false;
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASES
+// ─────────────────────────────────────────────────────────────────────────────
+const PHASE = {
+  TRIAGE: 'triage',       // Phase 1: Universal gateway questions
+  TRANSITION: 'transition', // Brief loading screen between phases
+  DEEP_DIVE: 'deep_dive', // Phase 2: Category-specific questions
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
 function SelfAssessment() {
-  const [step, setStep] = useState(1);
-  const [answers, setAnswers] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [diseaseScores, setDiseaseScores] = useState({});
-  const [autoProceed, setAutoProceed] = useState(false);
-  const [questions, setQuestions] = useState([]);
-  const [currentCategory, setCurrentCategory] = useState('');
-  const [topPrediction, setTopPrediction] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
-  const predictions = location.state?.predictions;
+  const predictions   = location.state?.predictions;
 
+  // Phase state
+  const [phase, setPhase] = useState(PHASE.TRIAGE);
+  const [step, setStep]   = useState(0); // index within current question list
+
+  // Answers
+  const [triageAnswers, setTriageAnswers] = useState({});
+  const [deepAnswers, setDeepAnswers]     = useState({});
+
+  // Resolved deep-dive questions + category
+  const [deepQuestions, setDeepQuestions]       = useState([]);
+  const [currentCategory, setCurrentCategory]   = useState('');
+  const [topPrediction, setTopPrediction]       = useState('');
+
+  // Scoring
+  const [diseaseScores, setDiseaseScores] = useState({});
+  const [autoProceed, setAutoProceed]     = useState(false);
+  const [isLoading, setIsLoading]         = useState(false);
+
+  // Derive AI top prediction on mount
   useEffect(() => {
     if (predictions) {
-      const { questions: personalizedQuestions, category, topPrediction: prediction } = getPersonalizedQuestions(predictions);
-      setQuestions(personalizedQuestions);
-      setCurrentCategory(category);
-      setTopPrediction(prediction);
+      setTopPrediction(getTopPrediction(predictions));
     }
   }, [predictions]);
 
-  const calculateAllDiseaseScores = (currentAnswers, topPredictionCondition) => {
-    if (!currentAnswers || Object.keys(currentAnswers).length === 0) {
-      return {};
-    }
+  // ── Triage handlers ──────────────────────────────────────────────────────
+  const currentTriageQ = TRIAGE_QUESTIONS[step];
+  const isLastTriageQ  = step === TRIAGE_QUESTIONS.length - 1;
 
-    const targetCategoryKey = getTargetCategory(topPredictionCondition);
-    const targetCategoryDiseases = CATEGORY_SCORE_MAP[targetCategoryKey];
+  const handleTriageAnswer = (qId, answer) => {
+    setTriageAnswers(prev => ({ ...prev, [qId]: answer }));
+  };
 
-    if (!targetCategoryDiseases) {
-      return {};
+  const handleTriageNext = () => {
+    if (step < TRIAGE_QUESTIONS.length - 1) {
+      setStep(step + 1);
     }
+  };
+
+  const handleTriagePrev = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
+  const handleTriageComplete = () => {
+    // Resolve category from triage answers + AI hint
+    const resolved = resolveCategory(triageAnswers, topPrediction);
+    const questions = getQuestionsForCategory(resolved);
+    setCurrentCategory(resolved);
+    setDeepQuestions(questions);
+    setStep(0);
+    setPhase(PHASE.TRANSITION);
+
+    // Show brief transition screen then enter deep-dive
+    setTimeout(() => {
+      setPhase(PHASE.DEEP_DIVE);
+    }, 2000);
+  };
+
+  // ── Deep-dive handlers ───────────────────────────────────────────────────
+  const currentDeepQ  = deepQuestions[step];
+  const isLastDeepQ   = step === deepQuestions.length - 1;
+
+  const handleDeepAnswer = (qId, answer) => {
+    setDeepAnswers(prev => ({ ...prev, [qId]: answer }));
+  };
+
+  const handleDeepNext = () => {
+    if (step < deepQuestions.length - 1) setStep(step + 1);
+  };
+
+  const handleDeepPrev = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
+  // Recalculate scores as deep answers change
+  const calculateAllDiseaseScores = (currentAnswers, categoryKey) => {
+    if (!currentAnswers || Object.keys(currentAnswers).length === 0) return {};
+    const targetCategoryDiseases = CATEGORY_SCORE_MAP[categoryKey];
+    if (!targetCategoryDiseases) return {};
 
     const targetDiseaseAverages = calculateDiseaseAverages(targetCategoryDiseases);
     const allScores = {};
@@ -179,13 +223,16 @@ function SelfAssessment() {
       const { weights, attributes } = diseaseData;
 
       Object.entries(currentAnswers).forEach(([questionId, answer]) => {
+        // Only score the numeric (deep-dive) questions. Triage questions (T1-T4)
+        // are used for category resolution, not weighted scoring.
+        if (isNaN(questionId) || questionId.startsWith('T')) return;
+
         const qId = parseInt(questionId);
         const answerValue = getAnswerValue(answer);
         const attributeIndex = ASSESSMENT_MAPPING[qId];
 
         if (attributeIndex !== undefined && weights[attributeIndex] !== undefined) {
           const characteristicValue = attributes[attributeIndex] || 0;
-
           if (answerValue !== characteristicValue) {
             totalWeight -= targetDiseaseAverages[diseaseName];
           } else {
@@ -198,7 +245,6 @@ function SelfAssessment() {
         }
       });
 
-      // Prevent negative base scores so downstream percentages stay non-negative
       allScores[diseaseName] = Math.max(0, totalWeight);
     });
 
@@ -206,87 +252,51 @@ function SelfAssessment() {
   };
 
   useEffect(() => {
-    if (Object.keys(answers).length > 0 && topPrediction) {
-      const scores = calculateAllDiseaseScores(answers, topPrediction);
+    if (phase !== PHASE.DEEP_DIVE) return;
+    if (Object.keys(deepAnswers).length > 0 && currentCategory) {
+      const scores = calculateAllDiseaseScores(deepAnswers, currentCategory);
       setDiseaseScores(scores);
 
-      const targetCategory = getTargetCategory(topPrediction);
-      const shouldProceed = checkDiseaseThreshold(scores, targetCategory);
-
+      const shouldProceed = checkDiseaseThreshold(scores, currentCategory);
       if (shouldProceed && !autoProceed) {
         setAutoProceed(true);
-        // Wait a bit to show the user we detected high confidence
         setTimeout(() => handleCompletion(scores), 1500);
       }
-
     }
-  }, [answers, topPrediction]);
-
-  const handleAnswerInComponent = (questionId, answer) => {
-    handleAnswer(setAnswers, questionId, answer);
-  };
-
-  const handleNext = () => {
-    if (step < questions.length) {
-      setStep(step + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
+  }, [deepAnswers, currentCategory, phase]);
 
   const handleCompletion = (preCalculatedScores = null) => {
     setIsLoading(true);
-
-    const randomDelay = Math.random() * 4 + 1;
+    const delay = Math.random() * 3 + 1;
+    const allAnswers = { ...triageAnswers, ...deepAnswers };
 
     setTimeout(() => {
-      localStorage.setItem('assessmentAnswers', JSON.stringify(answers));
+      localStorage.setItem('assessmentAnswers', JSON.stringify(allAnswers));
       navigate('/results', {
         state: {
           capturedImage,
           predictions,
-          answers,
+          answers: allAnswers,
+          triageAnswers,
+          deepAnswers,
           diseaseScores: preCalculatedScores || diseaseScores,
           adaptive: true,
           assessmentCategory: currentCategory,
-          assessmentQuestions: questions
+          assessmentQuestions: deepQuestions
         }
       });
-    }, randomDelay * 1000);
+    }, delay * 1000);
   };
 
-  const currentQuestion = questions[step - 1];
-  const isLastQuestion = step === questions.length;
-
-  if (questions.length === 0) {
-    return (
-      <div className="assessment-container">
-        <div className="loading-overlay">
-          <div className="loading-content">
-            <div className="loading-spinner"></div>
-            <p>Loading personalized assessment...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="assessment-container">
+      {/* Global loading overlay */}
       {isLoading && (
         <div className="loading-overlay">
           <div className="loading-content">
             <div className="loading-spinner"></div>
-            <p>
-              {autoProceed
-                ? "High-confidence match detected. Proceeding..."
-                : "Analyzing Assessment..."
-              }
-            </p>
+            <p>{autoProceed ? "High-confidence match detected. Proceeding..." : "Analyzing Assessment..."}</p>
           </div>
         </div>
       )}
@@ -299,62 +309,143 @@ function SelfAssessment() {
       {/* Header */}
       <div className="assessment-header">
         <h1 className="assessment-title">Self-Assessment</h1>
-        <p className="assessment-note">Note: Answer every question with the best of your knowledge as this will determine the results.</p>
+        <p className="assessment-note">
+          {phase === PHASE.TRIAGE
+            ? "Answer these brief questions so we can personalize the next set for you."
+            : "Answer every question with the best of your knowledge as this will determine the results."}
+        </p>
       </div>
 
-      {/* Question Card */}
-      <div className="assessment-card">
-        <div className="progress-dots">
-          {questions.map((_, i) => (
-            <div
-              key={i}
-              className={`dot ${i + 1 === step ? 'active' : i + 1 < step ? 'completed' : ''}`}
-            />
-          ))}
-        </div>
+      {/* ── PHASE 1: TRIAGE ── */}
+      {phase === PHASE.TRIAGE && (
+        <div className="assessment-card">
+          {/* Phase label */}
+          <div className="phase-badge">
+            <FontAwesomeIcon icon={faStethoscope} /> Step 1 of 2 — Initial Triage
+          </div>
 
-        <h2 className="question-number">Question {step}</h2>
-        <h3 className="question-text">{currentQuestion?.text}</h3>
+          <div className="progress-dots">
+            {TRIAGE_QUESTIONS.map((_, i) => (
+              <div
+                key={i}
+                className={`dot ${i === step ? 'active' : i < step ? 'completed' : ''}`}
+              />
+            ))}
+          </div>
 
-        <div className="options-grid">
-          {currentQuestion?.options.map((option, index) => (
-            <button
-              key={index}
-              className={`option-button ${answers[currentQuestion.id] === option ? 'selected' : ''}`}
-              onClick={() => handleAnswerInComponent(currentQuestion.id, option)}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
+          <h2 className="question-number">Question {step + 1}</h2>
+          <h3 className="question-text">{currentTriageQ?.text}</h3>
 
-        <div className="navigation-buttons">
-          {step > 1 ? (
-            <button className="nav-button prev-button" onClick={handlePrevious}>
-              <FontAwesomeIcon icon={faArrowLeft} /> Previous
-            </button>
-          ) : (
-            <div></div>
-          )}
-          {!isLastQuestion ? (
-            <button
-              className="nav-button next-button"
-              onClick={handleNext}
-              disabled={!answers[currentQuestion.id]}
-            >
-              Next <FontAwesomeIcon icon={faArrowRight} />
-            </button>
-          ) : (
-            <button
-              className="nav-button complete-button"
-              onClick={() => handleCompletion()}
-              disabled={!answers[currentQuestion.id]}
-            >
-              Complete Assessment <FontAwesomeIcon icon={faArrowRight} />
-            </button>
-          )}
+          <div className="options-grid">
+            {currentTriageQ?.options.map((option, idx) => (
+              <button
+                key={idx}
+                className={`option-button ${triageAnswers[currentTriageQ.id] === option ? 'selected' : ''}`}
+                onClick={() => handleTriageAnswer(currentTriageQ.id, option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="navigation-buttons">
+            {step > 0 ? (
+              <button className="nav-button prev-button" onClick={handleTriagePrev}>
+                <FontAwesomeIcon icon={faArrowLeft} /> Previous
+              </button>
+            ) : <div />}
+
+            {!isLastTriageQ ? (
+              <button
+                className="nav-button next-button"
+                onClick={handleTriageNext}
+                disabled={!triageAnswers[currentTriageQ?.id]}
+              >
+                Next <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+            ) : (
+              <button
+                className="nav-button complete-button"
+                onClick={handleTriageComplete}
+                disabled={!triageAnswers[currentTriageQ?.id]}
+              >
+                Continue <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── TRANSITION SCREEN ── */}
+      {phase === PHASE.TRANSITION && (
+        <div className="assessment-card transition-card">
+          <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
+          <h2 className="transition-title">Personalizing your assessment...</h2>
+          <p className="transition-text">
+            Based on your answers, we're loading the most relevant questions for your condition.
+          </p>
+        </div>
+      )}
+
+      {/* ── PHASE 2: DEEP-DIVE ── */}
+      {phase === PHASE.DEEP_DIVE && currentDeepQ && (
+        <div className="assessment-card">
+          {/* Phase label */}
+          <div className="phase-badge phase-badge--deep">
+            <FontAwesomeIcon icon={faStethoscope} /> Step 2 of 2 — Detailed Questions
+          </div>
+
+          <div className="progress-dots">
+            {deepQuestions.map((_, i) => (
+              <div
+                key={i}
+                className={`dot ${i === step ? 'active' : i < step ? 'completed' : ''}`}
+              />
+            ))}
+          </div>
+
+          <h2 className="question-number">Question {step + 1}</h2>
+          <h3 className="question-text">{currentDeepQ?.text}</h3>
+
+          <div className="options-grid">
+            {currentDeepQ?.options.map((option, idx) => (
+              <button
+                key={idx}
+                className={`option-button ${deepAnswers[currentDeepQ.id] === option ? 'selected' : ''}`}
+                onClick={() => handleDeepAnswer(currentDeepQ.id, option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="navigation-buttons">
+            {step > 0 ? (
+              <button className="nav-button prev-button" onClick={handleDeepPrev}>
+                <FontAwesomeIcon icon={faArrowLeft} /> Previous
+              </button>
+            ) : <div />}
+
+            {!isLastDeepQ ? (
+              <button
+                className="nav-button next-button"
+                onClick={handleDeepNext}
+                disabled={!deepAnswers[currentDeepQ?.id]}
+              >
+                Next <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+            ) : (
+              <button
+                className="nav-button complete-button"
+                onClick={() => handleCompletion()}
+                disabled={!deepAnswers[currentDeepQ?.id]}
+              >
+                Complete Assessment <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="assessment-footer">
@@ -374,10 +465,6 @@ function SelfAssessment() {
     </div>
   );
 }
-
-
-// Local getTargetCategory removed, now using imported version
-
 
 export default SelfAssessment;
 export {

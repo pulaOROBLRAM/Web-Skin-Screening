@@ -102,22 +102,45 @@ function ResultsPage() {
   const getAllCategoriesResults = () => {
     const results = [];
     
+    // --- Case A: Adaptive flow (Merged Clinical + AI) ---
     if (isAdaptive && diseaseScores && Object.keys(diseaseScores).length > 0) {
       const topPredString = getTopPrediction(predictions);
       const targetCategory = getTargetCategory(topPredString);
-      const categoryData = diseaseScores;
+      
+      // 1. Start with Clinical scores (already filtered by category)
+      const clinicalEntries = Object.entries(diseaseScores).map(([disease, score]) => ({
+        disease,
+        score: score * 1.5, // Give clinical data a slight boost weight
+        category: targetCategory,
+        origin: 'clinical'
+      }));
 
-      if (categoryData && Object.keys(categoryData).length > 0) {
-        const allDiseases = Object.entries(categoryData)
-          .map(([disease, score]) => ({
-            disease,
-            score,
-            category: targetCategory
-          }));
-        
-        results.push(...allDiseases);
-      }
-    } else if (assessmentData) {
+      // 2. Map AI raw predictions
+      const aiEntries = Object.entries(predictions.predictions || {}).map(([disease, prob]) => ({
+        disease: disease.replace(/_/g, ' '),
+        score: prob * 10, // Scale AI 0.0-1.0 to 0-10 range to match clinical base
+        category: getTargetCategory(disease),
+        origin: 'ai'
+      }));
+
+      // 3. Merge them (Sum scores if disease appears in both)
+      const mergedMap = {};
+      
+      [...clinicalEntries, ...aiEntries].forEach(item => {
+        const key = item.disease.toLowerCase().replace(/\s+/g, '_');
+        if (!mergedMap[key]) {
+          mergedMap[key] = { ...item, score: item.score };
+        } else {
+          mergedMap[key].score += item.score;
+          // Upgrade category if clinical has a better guess
+          if (item.origin === 'clinical') mergedMap[key].category = item.category;
+        }
+      });
+
+      results.push(...Object.values(mergedMap));
+    } 
+    // --- Case B: Legacy flow (Pre-adaptive) ---
+    else if (assessmentData) {
       const categories = ['INFLAMMATORY', 'INFECTIOUS', 'AUTOIMMUNE', 'BENIGN_GROWTH', 'PIGMENTARY', 'SKIN_CANCER', 'ENVIRONMENTAL'];
       
       categories.forEach(category => {

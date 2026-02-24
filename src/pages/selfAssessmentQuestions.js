@@ -1,3 +1,39 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE 1: TRIAGE QUESTIONS
+// These 4 universal questions are shown to ALL users first, before the AI
+// prediction influences the deep-dive question set.
+// ─────────────────────────────────────────────────────────────────────────────
+export const TRIAGE_QUESTIONS = [
+  {
+    id: 'T1',
+    text: "What do you primarily feel in the affected area?",
+    options: ["Itching or burning", "Pain or tenderness", "Nothing — it's just visible"],
+    attribute: 'triage_sensation'
+  },
+  {
+    id: 'T2',
+    text: "How long has this condition been present?",
+    options: ["Just a few days", "A few weeks", "Months or longer"],
+    attribute: 'triage_duration'
+  },
+  {
+    id: 'T3',
+    text: "What does it look like?",
+    options: ["Red bumps or a rash", "A hard lump under the skin", "A dark or discolored spot", "A ring or circular patch"],
+    attribute: 'triage_appearance'
+  },
+  {
+    id: 'T4',
+    text: "Has the affected area been visibly growing or changing?",
+    options: ["Yes, it's changing", "No, it looks the same"],
+    attribute: 'triage_change'
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE 2: DEEP-DIVE QUESTIONS (per category)
+// Only shown after the triage phase resolves the category.
+// ─────────────────────────────────────────────────────────────────────────────
 export const CATEGORY_QUESTIONS = {
   INFLAMMATORY: [
     // Acne
@@ -17,7 +53,7 @@ export const CATEGORY_QUESTIONS = {
     { id: 11, text: "Do you have stiff or painful joints (especially in the mornings)?", options: ["Yes", "Not at all"], attribute: 'psoriasis_joints' },
     { id: 12, text: "Are there changes in your fingernails, like tiny pits or yellowing?", options: ["Yes", "Not at all"], attribute: 'psoriasis_nails' }
   ],
-  
+
   INFECTIOUS: [
     // Cellulitis
     { id: 1, text: "Is the area hot to the touch and spreading rapidly?", options: ["Yes", "Not at all"], attribute: 'cellulitis_hot' },
@@ -36,7 +72,7 @@ export const CATEGORY_QUESTIONS = {
     { id: 11, text: "Have you been in contact with a new pet or a stray animal?", options: ["Yes", "Not at all"], attribute: 'ringworm_pet' },
     { id: 12, text: "Does the 'ring' have a clear center with a scaly perimeter?", options: ["Yes", "Not at all"], attribute: 'ringworm_center' }
   ],
-  
+
   BENIGN_GROWTH: [
     // Epidermoid Cyst
     { id: 1, text: "Is there a tiny black dot (punctum) in the center of the lump?", options: ["Yes", "Not at all"], attribute: 'cyst_punctum' },
@@ -55,7 +91,7 @@ export const CATEGORY_QUESTIONS = {
     { id: 11, text: "Is the bump very firm, almost like a hard button?", options: ["Yes", "Not at all"], attribute: 'dermatofibroma_firm' },
     { id: 12, text: "Does it have a darker 'halo' of pigment around the edge?", options: ["Yes", "Not at all"], attribute: 'dermatofibroma_halo' }
   ],
-  
+
   SKIN_CANCER: [
     // Melanoma
     { id: 1, text: "Has this mole changed in shape, size, or color recently?", options: ["Yes", "Not at all"], attribute: 'melanoma_change' },
@@ -70,7 +106,7 @@ export const CATEGORY_QUESTIONS = {
     { id: 8, text: "Is the growth tender or painful when you press on it?", options: ["Yes", "Not at all"], attribute: 'squamous_tender' },
     { id: 9, text: "Is the growth located on a high-sun area like the ear or lip?", options: ["Yes", "Not at all"], attribute: 'squamous_sun' }
   ],
-  
+
   AUTOIMMUNE: [
     { id: 1, text: "Is there white patches where skin has lost color?", options: ["Yes", "Not at all"], attribute: 'pigment_loss' },
     { id: 2, text: "Does the skin feel rough, scaly, or thickened?", options: ["Yes", "Not at all"], attribute: 'rough_scaly' },
@@ -79,13 +115,13 @@ export const CATEGORY_QUESTIONS = {
     { id: 5, text: "Is the area itchy or causing discomfort?", options: ["Yes", "Not at all"], attribute: 'itchy' },
     { id: 6, text: "Does it feel painful or tender?", options: ["Yes", "Not at all"], attribute: 'painful' }
   ],
-  
+
   PIGMENTARY: [
     { id: 1, text: "Is the spot flat and brown, appearing in sun-exposed areas?", options: ["Yes", "Not at all"], attribute: 'flat_brown' },
     { id: 2, text: "Has the spot been present for many years without much change?", options: ["Yes", "Not at all"], attribute: 'long_term' },
     { id: 3, text: "Does the pigmentation look patchy or like a mask on the face?", options: ["Yes", "Not at all"], attribute: 'mask_like' }
   ],
-  
+
   ENVIRONMENTAL: [
     { id: 1, text: "Did this appear after contact with plants or outdoor brush?", options: ["Yes", "Not at all"], attribute: 'plant_contact' },
     { id: 2, text: "Are you experiencing intense itching with a linear rash pattern?", options: ["Yes", "Not at all"], attribute: 'linear_itch' },
@@ -117,7 +153,7 @@ export const getQuestionsForCategory = (category) => {
 
 export const getTopPrediction = (predictions) => {
   if (!predictions) return '';
-  
+
   if (Array.isArray(predictions) && predictions.length > 0) {
     return predictions[0]?.condition || '';
   } else if (predictions.top_prediction) {
@@ -130,7 +166,7 @@ export const getTopPrediction = (predictions) => {
       return predArray.sort((a, b) => b[1] - a[1])[0][0];
     }
   }
-  
+
   return '';
 };
 
@@ -148,30 +184,87 @@ export const getTargetCategory = (topPredictionCondition) => {
     ENVIRONMENTAL: ['environmental', 'poison', 'razor', 'dry skin', 'sun damage', 'burn']
   };
 
-  
-
   for (const [category, keywords] of Object.entries(categories)) {
     if (keywords.some(keyword => condition.includes(keyword))) {
       return category;
     }
   }
-  
+
   return 'DEFAULT';
-  
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TRIAGE CATEGORY RESOLVER
+// Combines the user's 4 triage answers with the AI prediction to determine
+// the most appropriate deep-dive category.
+// User symptoms take priority; AI prediction is a fallback/tiebreaker.
+// ─────────────────────────────────────────────────────────────────────────────
+export const resolveCategory = (triageAnswers, aiPrediction = '') => {
+  const sensation  = triageAnswers['T1'] || '';
+  const duration   = triageAnswers['T2'] || '';
+  const appearance = triageAnswers['T3'] || '';
+  const change     = triageAnswers['T4'] || '';
+
+  // Rule 1: Lump symptoms
+  if (appearance.includes('lump')) {
+    // If it's painful or itching, it's likely an inflammatory condition (like cystic acne) 
+    // or an infected growth rather than a simple benign growth.
+    if (sensation.includes('Pain') || sensation.includes('Itching')) {
+      return 'INFLAMMATORY';
+    }
+    return 'BENIGN_GROWTH';
+  }
+
+  // Rule 2: Ring/circular patch → Infectious (Ringworm)
+  if (appearance.includes('ring') || appearance.includes('circular')) {
+    return 'INFECTIOUS';
+  }
+
+  // Rule 3: Dark/discolored spot that is changing → possible Skin Cancer
+  if (appearance.includes('discolored') || appearance.includes('dark')) {
+    if (change.includes('Yes')) return 'SKIN_CANCER';
+    if (duration.includes('Months')) return 'PIGMENTARY';
+    return 'AUTOIMMUNE';
+  }
+
+  // Rule 4: Red bumps/rash + pain + recent (days) → Infectious
+  if ((appearance.includes('bumps') || appearance.includes('rash')) &&
+      sensation.includes('Pain') &&
+      duration.includes('days')) {
+    return 'INFECTIOUS';
+  }
+
+  // Rule 5: Red bumps/rash + itching → Inflammatory
+  if ((appearance.includes('bumps') || appearance.includes('rash')) &&
+      sensation.includes('Itching')) {
+    return 'INFLAMMATORY';
+  }
+
+  // Rule 6: No sensation + months + not changing → Pigmentary
+  if (sensation.includes('Nothing') && duration.includes('Months') && !change.includes('Yes')) {
+    return 'PIGMENTARY';
+  }
+
+  // Rule 7: No sensation + changing → possible Skin Cancer
+  if (sensation.includes('Nothing') && change.includes('Yes')) {
+    return 'SKIN_CANCER';
+  }
+
+  // Fallback: Use AI prediction
+  return getTargetCategory(aiPrediction);
+};
 
 export const getPersonalizedQuestions = (predictions) => {
   const topPrediction = getTopPrediction(predictions);
   const category = getTargetCategory(topPrediction);
   const questions = getQuestionsForCategory(category);
-  
+
   console.log('Personalized Assessment:', {
     topPrediction,
     category,
     questionCount: questions.length
   });
-  
+
   return {
     questions,
     category,
