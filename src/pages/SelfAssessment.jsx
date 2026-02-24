@@ -9,7 +9,8 @@ import {
   resolveCategory,
   getQuestionsForCategory,
   getTopPrediction,
-  getTargetCategory
+  getTargetCategory,
+  TRIAGE_SCORING_FILTERS
 } from './selfAssessmentQuestions';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,8 +182,27 @@ function SelfAssessment() {
     // Resolve category from triage answers + AI hint
     const resolved = resolveCategory(triageAnswers, topPrediction);
     const questions = getQuestionsForCategory(resolved);
+    
     setCurrentCategory(resolved);
-    setDeepQuestions(questions);
+    
+    // Calculate initial scores based on Triage only
+    const initialScores = calculateAllDiseaseScores({}, resolved, triageAnswers);
+    setDiseaseScores(initialScores);
+
+    // Check if Triage alone hit the threshold
+    const shouldProceed = checkDiseaseThreshold(initialScores, resolved);
+    
+    if (shouldProceed) {
+      setPhase(PHASE.TRANSITION);
+      setAutoProceed(true);
+      setTimeout(() => handleCompletion(initialScores), 2000);
+      return;
+    }
+
+    // Otherwise, prepare adaptive questions for Phase 2
+    // We sort questions so those relevant to the current top suspect appear first
+    const prioritizedQuestions = sortQuestionsByRelevance(questions, initialScores, resolved);
+    setDeepQuestions(prioritizedQuestions);
     setStep(0);
     setPhase(PHASE.TRANSITION);
 
@@ -190,6 +210,37 @@ function SelfAssessment() {
     setTimeout(() => {
       setPhase(PHASE.DEEP_DIVE);
     }, 2000);
+  };
+
+  // Helper to sort questions by their impact on top scoring diseases
+  const sortQuestionsByRelevance = (questions, currentScores, category) => {
+    if (!currentScores || Object.keys(currentScores).length === 0) return questions;
+    
+    // Find the top 2 suspect diseases
+    const topDiseases = Object.entries(currentScores)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(entry => entry[0]);
+
+    const targetCategoryDiseases = CATEGORY_SCORE_MAP[category];
+    
+    return [...questions].sort((a, b) => {
+      let scoreA = 0;
+      let scoreB = 0;
+
+      topDiseases.forEach(dName => {
+        const dData = targetCategoryDiseases[dName];
+        if (!dData) return;
+        
+        const idxA = ASSESSMENT_MAPPING[a.id];
+        const idxB = ASSESSMENT_MAPPING[b.id];
+
+        if (idxA !== undefined && dData.weights[idxA] > 0) scoreA += dData.weights[idxA];
+        if (idxB !== undefined && dData.weights[idxB] > 0) scoreB += dData.weights[idxB];
+      });
+
+      return scoreB - scoreA; // Descending impact
+    });
   };
 
   // ── Deep-dive handlers ───────────────────────────────────────────────────
@@ -209,8 +260,8 @@ function SelfAssessment() {
   };
 
   // Recalculate scores as deep answers change
-  const calculateAllDiseaseScores = (currentAnswers, categoryKey) => {
-    if (!currentAnswers || Object.keys(currentAnswers).length === 0) return {};
+  const calculateAllDiseaseScores = (currentDeepAnswers, categoryKey, triageData = null) => {
+    const activeTriage = triageData || triageAnswers;
     const targetCategoryDiseases = CATEGORY_SCORE_MAP[categoryKey];
     if (!targetCategoryDiseases) return {};
 
@@ -218,14 +269,26 @@ function SelfAssessment() {
     const allScores = {};
 
     Object.entries(targetCategoryDiseases).forEach(([diseaseName, diseaseData]) => {
-      const INITIAL_SCORE = 5;
-      let totalWeight = INITIAL_SCORE;
+      const BASE_SCORE = 5;
+      let totalWeight = BASE_SCORE;
+      
+      // 1. Apply Triage Scoring (Phase 1 impact)
+      Object.entries(activeTriage).forEach(([tId, answer]) => {
+        const filter = TRIAGE_SCORING_FILTERS[tId];
+        if (filter && filter[answer]) {
+          const { categories, weight } = filter[answer];
+          // If this triage answer supports this disease's category, add weight
+          if (categories.includes(categoryKey)) {
+            totalWeight += weight;
+          }
+        }
+      });
+
       const { weights, attributes } = diseaseData;
 
-      Object.entries(currentAnswers).forEach(([questionId, answer]) => {
-        // Only score the numeric (deep-dive) questions. Triage questions (T1-T4)
-        // are used for category resolution, not weighted scoring.
-        if (isNaN(questionId) || questionId.startsWith('T')) return;
+      // 2. Apply Deep-Dive Scoring (Phase 2 impact)
+      Object.entries(currentDeepAnswers).forEach(([questionId, answer]) => {
+        if (isNaN(questionId)) return;
 
         const qId = parseInt(questionId);
         const answerValue = getAnswerValue(answer);
@@ -237,7 +300,7 @@ function SelfAssessment() {
             totalWeight -= targetDiseaseAverages[diseaseName];
           } else {
             if (answerValue === 0 && characteristicValue === 0) {
-              totalWeight += targetDiseaseAverages[diseaseName];
+              totalWeight += targetDiseaseAverages[diseaseName] * 0.5; // Slight boost for matching absence
             } else if (answerValue === 1 && characteristicValue === 1) {
               totalWeight += weights[attributeIndex];
             }
