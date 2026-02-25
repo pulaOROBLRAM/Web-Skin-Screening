@@ -13,6 +13,7 @@ function UploadPage() {
   const [imageSource, setImageSource] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (location.state?.capturedImage) {
@@ -27,14 +28,46 @@ function UploadPage() {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
+    processFile(file);
+  };
+
+  const processFile = (file) => {
+    if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result);
         setImageSource('upload');
       };
       reader.readAsDataURL(file);
+    } else if (file) {
+      setError('Please upload a valid image file.');
     }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    processFile(file);
   };
 
   const dataURLtoFile = (dataUrl, filename) => {
@@ -128,35 +161,57 @@ function UploadPage() {
               <p className="upload-main-subtitle">Choose how you'd like to provide your skin image for analysis.</p>
             </header>
 
-            <div className="upload-options-grid">
-              <div className="upload-option-card">
-                <div className="option-icon-container">
-                  <FontAwesomeIcon icon={faCloudUpload} />
-                </div>
-                <h2>Upload Image</h2>
-                <p>Select a clear photo from your device's library.</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  id="file-upload"
-                  className="file-input"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-                <label htmlFor="file-upload" className="btn-upload-trigger">
-                  Browse Files
-                </label>
-              </div>
+            <div className="upload-hub">
+              <div 
+                className={`drop-zone-container ${isDragging ? 'dragging' : ''}`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <div className="drop-zone-content">
+                  <div className="hub-icon-wrapper">
+                    <FontAwesomeIcon icon={faCloudUpload} />
+                  </div>
+                  <h2 className="hub-title">Drag & Drop Your Image</h2>
+                  <p className="hub-subtitle">High-quality photos provide better assessment accuracy</p>
+                  
+                  <div className="hub-divider">
+                    <span>OR</span>
+                  </div>
 
-              <div className="upload-option-card">
-                <div className="option-icon-container">
-                  <FontAwesomeIcon icon={faCamera} />
+                  <div className="hub-actions">
+                    <div className="action-wrapper">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        id="file-upload"
+                        className="file-input-hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                      <label htmlFor="file-upload" className="hub-btn hub-btn-primary">
+                        <FontAwesomeIcon icon={faImage} style={{ marginRight: '10px' }} />
+                        Browse Files
+                      </label>
+                    </div>
+
+                    <button className="hub-btn hub-btn-camera" onClick={handleCameraClick}>
+                      <FontAwesomeIcon icon={faCamera} style={{ marginRight: '10px' }} />
+                      Use Camera
+                    </button>
+                  </div>
                 </div>
-                <h2>Take a Photo</h2>
-                <p>Use your camera to take a fresh photo of the area.</p>
-                <button className="btn-upload-trigger" onClick={handleCameraClick}>
-                  Open Camera
-                </button>
+                
+                {/* Visual feedback for dragging */}
+                {isDragging && (
+                  <div className="drag-overlay">
+                    <div className="overlay-content">
+                      <FontAwesomeIcon icon={faCloudUpload} bounce />
+                      <p>Drop to start analysis</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
