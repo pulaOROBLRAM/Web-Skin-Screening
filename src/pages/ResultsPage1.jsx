@@ -462,6 +462,14 @@ function ResultsPage() {
             <div className="recommendation-note">
               <p><strong>Clinical Note:</strong> This AI-driven assessment is designed for preliminary screening. It cross-references visual patterns with clinical data to provide insights into potential skin conditions.</p>
             </div>
+
+            {/* Book Appointment - sticky with conditions */}
+            <button 
+              className="book-appointment-btn"
+              onClick={() => window.location.href = CONFIG.BOOKING_URL}
+            >
+              Book an Appointment
+            </button>
           </div>
 
           {/* Right Column: Image + Recommendations Stack */}
@@ -516,14 +524,6 @@ function ResultsPage() {
                 )}
               </div>
               
-              <div className="rec-footer-actions">
-                <button 
-              className="book-appointment-btn"
-              onClick={() => window.location.href = CONFIG.BOOKING_URL}
-            >
-              Book an Appointment
-            </button>
-              </div>
             </div>
           </div>
 
