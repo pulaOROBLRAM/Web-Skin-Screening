@@ -566,26 +566,50 @@ body {
   gap: 16px;
 }
 
-.recommendations-list {
+.condition-knowledge-base {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
 }
 
-.recommendation-item {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  color: var(--text-gray);
+.condition-description-text {
   font-size: 1.05rem;
-  line-height: 1.5;
+  line-height: 1.7;
+  color: var(--text-gray);
+  margin: 0;
 }
 
-.recommendation-icon {
-  color: var(--success-green);
-  margin-top: 4px;
-  font-size: 1.1rem;
-  flex-shrink: 0;
+.condition-reference-box {
+  margin-top: 10px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reference-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reference-link {
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-block;
+  transition: color 0.2s;
+}
+
+.reference-link:hover {
+  color: var(--light-blue);
+  text-decoration: underline;
 }
 
 .rec-footer-actions {

@@ -496,35 +496,26 @@ function ResultsPage() {
                 )}
             </div>
 
-            {/* Bottom: Recommendations */}
+            {/* Bottom: About the Primary Condition */}
             <div className="recommendations-container">
-              <h2 className="analysis-header">Recommendations</h2>
-              <div className="recommendations-list">
-                {displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0 ? (
-                  displayCondition.recommendations.map((rec, index) => (
-                    <div key={index} className="recommendation-item">
-                      <FaCheckCircle className="recommendation-icon" />
-                      <span>{typeof rec === "string" ? rec : rec.text}</span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="recommendation-item">
-                      <FaCheckCircle className="recommendation-icon" />
-                      <span>Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</span>
-                    </div>
-                    <div className="recommendation-item">
-                      <FaCheckCircle className="recommendation-icon" />
-                      <span>Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</span>
-                    </div>
-                    <div className="recommendation-item">
-                      <FaCheckCircle className="recommendation-icon" />
-                      <span>Monitor the area for any changes in size, shape, color, or texture.</span>
-                    </div>
-                  </>
-                )}
+              <h2 className="analysis-header">About the Primary Condition</h2>
+              <div className="condition-knowledge-base">
+                <p className="condition-description-text">
+                  {displayCondition?.description || "Consult a medical professional for a detailed diagnosis and personalized treatment plan."}
+                </p>
+                
+                <div className="condition-reference-box">
+                  <span className="reference-label">Reference:</span>
+                  <a 
+                    href={`https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="reference-link"
+                  >
+                    Mayo Clinic - Medical Information Center
+                  </a>
+                </div>
               </div>
-              
             </div>
           </div>
 
