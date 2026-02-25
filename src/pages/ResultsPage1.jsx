@@ -461,7 +461,7 @@ function ResultsPage() {
 
             {/* Clinical Disclaimer moved here */}
             <div className="recommendation-note">
-              <p><strong>Clinical Note:</strong> This AI-driven assessment is designed for preliminary screening. It cross-references visual patterns with clinical data to provide insights into potential skin conditions.</p>
+              <p><strong>Clinical Note:</strong> For a more personalized recommendation, contact a professional</p>
             </div>
 
             {/* Book Appointment - sticky with conditions */}
