@@ -67,25 +67,35 @@ function LandingPage() {
       </nav>
 
       <header id="home" className="hero-section">
-        <div className="container animate-fade-in">
-          <h1 className="hero-title">Empower Your Skin Health Journey</h1>
-          
-          <div className="hero-cta-container">
-            <button className="hero-btn primary" onClick={handleStart}>
-              <FontAwesomeIcon icon={faCamera} /> Start Free Assessment
-            </button>
-            <button className="hero-btn secondary" onClick={handleBookAppointment}>
-              <FontAwesomeIcon icon={faUserDoctor} /> Book Appointment
-            </button>
-          </div>
+        <div className="container">
+          <div className="hero-grid">
+            <div className="hero-text-content animate-fade-in">
+              <h1 className="hero-title">Empower Your Skin Health Journey</h1>
+              <p className="hero-subtitle">
+                Advanced AI technology that scans and analyzes skin conditions in seconds. 
+                Get professional-grade insights from the comfort of your home.
+              </p>
+              
+              <div className="hero-cta-container">
+                <button className="hero-btn primary" onClick={handleStart}>
+                  <FontAwesomeIcon icon={faCamera} /> Start Free Assessment
+                </button>
+                <button className="hero-btn secondary" onClick={handleBookAppointment}>
+                  <FontAwesomeIcon icon={faUserDoctor} /> Book Appointment
+                </button>
+              </div>
+            </div>
 
-          <div className="phone-mockup-container">
-            <div className="phone-mockup animate-scale-in">
-              <FontAwesomeIcon icon={faMobileScreen} className="phone-icon" />
+            <div className="hero-visual-content">
+              <div className="phone-mockup-container">
+                <div className="phone-mockup animate-scale-in">
+                  <FontAwesomeIcon icon={faMobileScreen} className="phone-icon" />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="why-intro-section animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="why-intro-section reveal">
             <h2 className="why-intro-title">Why Use This App? Your Skin Health Matters.</h2>
             <p className="why-intro-text">
               Our application harnesses the power of machine learning to quickly analyze images of your skin.
@@ -93,8 +103,6 @@ function LandingPage() {
               common skin conditions.
             </p>
           </div>
-
-
         </div>
       </header>
       {/* Why Use This App Section */}
@@ -103,33 +111,41 @@ function LandingPage() {
 
 
           <div className="features-grid">
-            <div className="feature-card">
+            <div className="feature-card reveal">
               <div className="feature-icon">
                 <FontAwesomeIcon icon={faCamera} />
               </div>
-              <h3>Quick & Convenient</h3>
-              <p>Upload or take a photo to receive a fast, instant assessment.</p>
+              <div className="feature-text">
+                <h3>Quick & Convenient</h3>
+                <p>Upload or take a photo to receive a fast, instant assessment.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="feature-card reveal" style={{ transitionDelay: '0.2s' }}>
               <div className="feature-icon">
                 <FontAwesomeIcon icon={faListUl} />
               </div>
-              <h3>Proactive Care</h3>
-              <p>Identify potential issues early and seek professional advice.</p>
+              <div className="feature-text">
+                <h3>Proactive Care</h3>
+                <p>Identify potential issues early and seek professional advice.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="feature-card reveal" style={{ transitionDelay: '0.4s' }}>
               <div className="feature-icon">
                 <FontAwesomeIcon icon={faShieldAlt} />
               </div>
-              <h3>Privacy First</h3>
-              <p>Our platform is HIPAA compliant. Your data stays private.</p>
+              <div className="feature-text">
+                <h3>Privacy First</h3>
+                <p>Our platform is HIPAA compliant. Your data stays private.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="feature-card reveal" style={{ transitionDelay: '0.6s' }}>
               <div className="feature-icon">
                 <FontAwesomeIcon icon={faUserGear} />
               </div>
-              <h3>Expert Foundation</h3>
-              <p>AI-trained models to help with your skin health journey.</p>
+              <div className="feature-text">
+                <h3>Expert Foundation</h3>
+                <p>AI-trained models to help with your skin health journey.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -149,19 +165,22 @@ function LandingPage() {
               <div className="step-item reveal" style={{ transitionDelay: '0.1s' }}>
                 <span className="step-number">01</span>
                 <div className="step-text">
+                  <h3>Capture Image</h3>
                   <p>Prepare a clear photo of the affected skin area. Tip: Ensure clear lighting, no flash, and sharp focus. Upload or take a photo to start the assessment.</p>
                 </div>
               </div>
               <div className="step-item reveal" style={{ transitionDelay: '0.3s' }}>
                 <span className="step-number">02</span>
                 <div className="step-text">
+                  <h3>AI Analysis</h3>
                   <p>Wait for the model to analyze your image and self-assessment, read the result and suggested recommendations.</p>
                 </div>
               </div>
               <div className="step-item reveal" style={{ transitionDelay: '0.5s' }}>
                 <span className="step-number">03</span>
                 <div className="step-text">
-                  <p>Seek professional advice with a dermatologist.</p>
+                  <h3>Consult Specialist</h3>
+                  <p>Seek professional advice with a dermatologist for a comprehensive clinical diagnosis.</p>
                 </div>
               </div>
             </div>
@@ -182,7 +201,6 @@ function LandingPage() {
         <div className="container">
           <h2 className="section-title">Why Choose SkinSight AI?</h2>
           <p className="comparison-subtitle">You need a solution that keeps up. That's why we developed SkinSight AI.</p>
-          <button className="btn-start-now" onClick={handleStart}>Start Now</button>
 
           <div className="comparison-table">
             <div className="comparison-header">
@@ -223,6 +241,7 @@ function LandingPage() {
       <section id="contact" className="connect-section reveal">
         <div className="container">
           <h2 className="section-title">Connect with us</h2>
+          <p className="section-subtitle">Have questions? Our support team is here to help you navigate your skin health journey.</p>
           <div className="connect-content">
 
             <div className="contact-form">
@@ -237,32 +256,36 @@ function LandingPage() {
                 </div>
               ) : (
                 <form onSubmit={handleContactSubmit}>
-                  <div className="form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="fullName" required placeholder="John Doe" />
-                  </div>
-                  <div className="form-group">
-                    <label>Email Address</label>
-                    <input type="email" name="email" required placeholder="john@example.com" />
-                  </div>
-                  <div className="form-group">
-                    <label>Sex</label>
-                    <div className="radio-group">
-                      <label>
-                        <input type="radio" name="sex" value="female" defaultChecked /> Female
-                      </label>
-                      <label>
-                        <input type="radio" name="sex" value="male" /> Male
-                      </label>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Full Name</label>
+                      <input type="text" name="fullName" required placeholder="John Doe" />
+                    </div>
+                    <div className="form-group">
+                      <label>Email Address</label>
+                      <input type="email" name="email" required placeholder="john@example.com" />
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label>Which best describes your affiliation?</label>
-                    <select name="affiliation" defaultValue="current-user">
-                      <option value="current-user">Current SkinSight AI User</option>
-                      <option value="new-user">New User</option>
-                      <option value="medical-professional">Medical Professional</option>
-                    </select>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Sex</label>
+                      <div className="radio-group">
+                        <label>
+                          <input type="radio" name="sex" value="female" defaultChecked /> Female
+                        </label>
+                        <label>
+                          <input type="radio" name="sex" value="male" /> Male
+                        </label>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Which best describes your affiliation?</label>
+                      <select name="affiliation" defaultValue="current-user">
+                        <option value="current-user">Current SkinSight AI User</option>
+                        <option value="new-user">New User</option>
+                        <option value="medical-professional">Medical Professional</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="form-group">
                     <label>Concern</label>
