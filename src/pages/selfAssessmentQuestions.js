@@ -31,6 +31,35 @@ export const TRIAGE_QUESTIONS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TRIAGE SCORING FILTERS
+// Maps each triage question + answer combination to the disease categories
+// it supports and a weight value. Used during scoring to incorporate Phase 1
+// triage answers into the disease score calculation.
+// ─────────────────────────────────────────────────────────────────────────────
+export const TRIAGE_SCORING_FILTERS = {
+  'T1': {
+    'Itching or burning':       { categories: ['INFLAMMATORY', 'AUTOIMMUNE', 'ENVIRONMENTAL'], weight: 3 },
+    'Pain or tenderness':       { categories: ['INFECTIOUS', 'SKIN_CANCER', 'BENIGN_GROWTH'],  weight: 3 },
+    "Nothing — it's just visible": { categories: ['PIGMENTARY', 'BENIGN_GROWTH', 'SKIN_CANCER'], weight: 2 }
+  },
+  'T2': {
+    'Just a few days':   { categories: ['INFECTIOUS', 'ENVIRONMENTAL'],                  weight: 3 },
+    'A few weeks':       { categories: ['INFLAMMATORY', 'INFECTIOUS', 'AUTOIMMUNE'],     weight: 2 },
+    'Months or longer':  { categories: ['PIGMENTARY', 'BENIGN_GROWTH', 'SKIN_CANCER'],   weight: 3 }
+  },
+  'T3': {
+    'Red bumps or a rash':          { categories: ['INFLAMMATORY', 'INFECTIOUS', 'ENVIRONMENTAL'], weight: 4 },
+    'A hard lump under the skin':   { categories: ['BENIGN_GROWTH'],                               weight: 5 },
+    'A dark or discolored spot':    { categories: ['PIGMENTARY', 'SKIN_CANCER', 'AUTOIMMUNE'],     weight: 4 },
+    'A ring or circular patch':     { categories: ['INFECTIOUS'],                                  weight: 5 }
+  },
+  'T4': {
+    "Yes, it's changing":     { categories: ['SKIN_CANCER', 'INFECTIOUS', 'INFLAMMATORY'], weight: 4 },
+    'No, it looks the same':  { categories: ['PIGMENTARY', 'BENIGN_GROWTH'],               weight: 2 }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PHASE 2: DEEP-DIVE QUESTIONS (per category)
 // Only shown after the triage phase resolves the category.
 // ─────────────────────────────────────────────────────────────────────────────
