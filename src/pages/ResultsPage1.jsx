@@ -282,9 +282,14 @@ function ResultsPage() {
       </div>` : '';
 
     const clinicalNoteSection = `
-      <div class="section">
-        <div style="background-color: #f0f7ff; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 8px; font-size: 1rem; color: #1e3a8a; line-height: 1.6;">
-          <strong>Clinical Note:</strong> For a more personalized recommendation, contact a professional
+      <div class="section" style="margin-top: 20px; margin-bottom: 30px;">
+        <div style="background-color: #fffaf0; border: 2px solid #ed8936; padding: 20px; border-radius: 12px; text-align: center;">
+          <div style="color: #c05621; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">
+            ⚠️ Clinical Notice
+          </div>
+          <div style="font-size: 1.25rem; font-weight: 700; color: #2d3748; line-height: 1.4;">
+            For a more personalized recommendation, contact a professional
+          </div>
         </div>
       </div>`;
 
@@ -293,11 +298,14 @@ function ResultsPage() {
         <head>
           <title>${settings.companyName} Analysis Report</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+            
             body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
               padding: 40px; 
-              color: #333;
+              color: #2d3748;
               line-height: 1.6;
+              background-color: #fff;
             }
             .header {
               text-align: center;
@@ -305,77 +313,77 @@ function ResultsPage() {
               margin-bottom: 30px;
               padding-bottom: 20px;
             }
-            .header h1 { color: ${settings.primaryColor}; margin: 0; }
+            .header h1 { 
+              color: ${settings.primaryColor}; 
+              margin: 0; 
+              font-weight: 800;
+              font-size: 2.2rem;
+            }
             .meta-info {
               display: flex;
               justify-content: space-between;
               margin-bottom: 30px;
               font-size: 0.9rem;
-              color: #666;
+              color: #718096;
+              font-weight: 500;
             }
             .section { margin-bottom: 40px; }
             .section-title {
-              font-size: 1.2rem;
-              font-weight: bold;
+              font-size: 1.3rem;
+              font-weight: 700;
               color: ${settings.primaryColor};
-              border-bottom: 1px solid #e5e7eb;
-              margin-bottom: 15px;
-              padding-bottom: 5px;
+              border-bottom: 1px solid #e2e8f0;
+              margin-bottom: 18px;
+              padding-bottom: 8px;
             }
             table {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 20px;
+              background-color: #fff;
             }
             th, td {
               text-align: left;
-              padding: 12px;
-              border: 1px solid #e5e7eb;
+              padding: 14px;
+              border: 1px solid #e2e8f0;
+              font-size: 0.95rem;
             }
             th {
-              background-color: #f8fafc;
-              color: ${settings.primaryColor};
-              font-weight: 600;
+              background-color: #f7fafc;
+              color: #4a5568;
+              font-weight: 700;
+              text-transform: uppercase;
+              font-size: 0.85rem;
+              letter-spacing: 0.5px;
             }
             .image-container {
               text-align: center;
               margin-bottom: 30px;
             }
             .image-container img {
-              max-width: 400px;
-              border-radius: 8px;
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            .recommendation-item {
-              margin-bottom: 8px;
-              padding-left: 20px;
-              position: relative;
-            }
-            .recommendation-item::before {
-              content: "•";
-              position: absolute;
-              left: 0;
-              color: ${settings.primaryColor};
-              font-weight: bold;
+              max-width: 480px;
+              border-radius: 12px;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             }
             .footer {
-              margin-top: 50px;
-              font-size: 0.8rem;
-              color: #999;
+              margin-top: 60px;
+              font-size: 0.85rem;
+              color: #a0aec0;
               text-align: center;
-              border-top: 1px solid #eee;
-              padding-top: 20px;
+              border-top: 1px solid #edf2f7;
+              padding-top: 30px;
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>${settings.companyName} Analysis Report</h1>
+            <h1 style="color: ${settings.primaryColor};">${settings.companyName}</h1>
+            <p style="margin-top: 5px; color: #718096; font-weight: 600;">DERMATOLOGICAL ASSESSMENT REPORT</p>
           </div>
 
           <div class="meta-info">
-            <span>Report ID: SS-${Math.floor(Math.random() * 1000000)}</span>
-            <span>Generated: ${new Date().toLocaleString()}</span>
+            <span>Report ID: <strong>SS-${Math.floor(Math.random() * 1000000)}</strong></span>
+            <span>Generated: <strong>${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}</strong></span>
           </div>
 
           ${imageSection}
@@ -386,8 +394,8 @@ function ResultsPage() {
           ${analysisNotesSection}
 
           <div class="footer">
-            <p>This report is generated by AI for informational purposes only and does not substitute professional medical advice.</p>
-            <p>© 2025 ${settings.companyName}. All rights reserved.</p>
+            <p style="margin-bottom: 5px;">This report is generated by AI for informational purposes only and does not substitute professional medical advice.</p>
+            <p>© 2025 ${settings.companyName} • Confidential Medical Assessment</p>
           </div>
         </body>
       </html>
