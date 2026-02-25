@@ -136,13 +136,13 @@
 
 .drop-zone-container {
   background: var(--bg-white);
-  border: 2px dashed var(--border-mod);
+  border: 2px dashed #cbd5e1;
   border-radius: var(--radius-xl);
-  padding: 6rem 3rem;
+  padding: 5rem 3rem;
   text-align: center;
   position: relative;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow-sm);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -200,68 +200,79 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-  color: var(--text-muted);
-  font-weight: 700;
-  font-size: 0.75rem;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
 }
 
 .hub-divider::before,
 .hub-divider::after {
   content: "";
   height: 1px;
-  flex: 1;
-  background: var(--border-mod);
-  max-width: 48px;
+  width: 40px;
+  background: #e2e8f0;
 }
 
 .hub-actions {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.25rem;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .hub-btn {
-  padding: 1.125rem 2.5rem;
-  border-radius: var(--radius-md);
+  height: 54px;
+  padding: 0 2rem;
+  border-radius: 12px;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   border: none;
+  white-space: nowrap;
 }
 
 .hub-btn-primary {
   background: var(--primary-blue);
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
 .hub-btn-primary:hover {
   background: #1e293b;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
 }
 
 .hub-btn-camera {
   background: white;
   color: var(--primary-blue);
-  border: 1px solid var(--border-mod);
-  box-shadow: var(--shadow-sm);
+  border: 2px solid #e2e8f0;
 }
 
 .hub-btn-camera:hover {
   border-color: var(--primary-blue);
-  background: var(--bg-light);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
 }
 
 .drag-overlay {
@@ -315,6 +326,7 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
   padding-left: 0;
+  list-style: none;
 }
 
 .upload-guidelines li {
