@@ -259,18 +259,15 @@ function ResultsPage() {
 
     const recommendationsSection = settings.includeRecommendations ? `
       <div class="section">
-        <div class="section-title">Clinical Recommendation Summary</div>
-        <div class="recommendations">
-          ${(displayCondition?.recommendations && displayCondition.recommendations.filter(r => (typeof r === 'string' ? r : r.text)?.trim()).length > 0) 
-            ? displayCondition.recommendations.map(rec => `
-                <div class="recommendation-item">${typeof rec === "string" ? rec : rec.text}</div>
-              `).join('')
-            : `
-                <div class="recommendation-item">Maintain a consistent skin care routine using gentle, non-comedogenic cleansers.</div>
-                <div class="recommendation-item">Protect your skin from UV radiation by using broad-spectrum sunscreen (SPF 30+) daily.</div>
-                <div class="recommendation-item">Monitor the area for any changes in size, shape, color, or texture.</div>
-              `
-          }
+        <div class="section-title">About the Primary Condition</div>
+        <div style="font-size: 1rem; color: #4b5563; margin-bottom: 15px;">
+          ${displayCondition?.description || "Consult a medical professional for a detailed diagnosis and personalized treatment plan."}
+        </div>
+        <div style="background-color: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Reference:</div>
+          <a href="https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}" style="color: #1e3a8a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+            Mayo Clinic - Medical Information Center
+          </a>
         </div>
       </div>` : '';
 
@@ -283,6 +280,13 @@ function ResultsPage() {
             : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
         </div>
       </div>` : '';
+
+    const clinicalNoteSection = `
+      <div class="section">
+        <div style="background-color: #f0f7ff; padding: 15px; border-left: 4px solid #1e3a8a; border-radius: 8px; font-size: 1rem; color: #1e3a8a; line-height: 1.6;">
+          <strong>Clinical Note:</strong> For a more personalized recommendation, contact a professional
+        </div>
+      </div>`;
 
     const reportContent = `
       <html>
@@ -376,6 +380,7 @@ function ResultsPage() {
 
           ${imageSection}
           ${resultsSection}
+          ${clinicalNoteSection}
           ${assessmentSection}
           ${recommendationsSection}
           ${analysisNotesSection}
