@@ -56,6 +56,7 @@ function ResultsPage() {
   const isAdaptive = location.state?.adaptive || false;
 
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
+  const [showReportConfig, setShowReportConfig] = useState(false);
 
   const handleToggleSetting = (setting) => {
     setReportSettings(prev => ({
@@ -549,56 +550,61 @@ function ResultsPage() {
           </div>
         </div>
 
-        {/* Report Download Configuration UI */}
-        <div className="report-config-panel">
-          <div className="report-config-title">
-            <FaDownload /> Report Download Options
-          </div>
-          <div className="config-toggles">
-            <label className="toggle-item">
-              <input 
-                type="checkbox" 
-                checked={reportSettings.includeImage} 
-                onChange={() => handleToggleSetting('includeImage')}
-              />
-              <span className="toggle-label">Include Image</span>
-            </label>
-            <label className="toggle-item">
-              <input 
-                type="checkbox" 
-                checked={reportSettings.includeRecommendations} 
-                onChange={() => handleToggleSetting('includeRecommendations')}
-              />
-              <span className="toggle-label">Include Recommendations</span>
-            </label>
-            <label className="toggle-item">
-              <input 
-                type="checkbox" 
-                checked={reportSettings.includeAssessmentAnswers} 
-                onChange={() => handleToggleSetting('includeAssessmentAnswers')}
-              />
-              <span className="toggle-label">Include Assessment Answers</span>
-            </label>
-            <label className="toggle-item">
-              <input 
-                type="checkbox" 
-                checked={reportSettings.includeAnalysisNotes} 
-                onChange={() => handleToggleSetting('includeAnalysisNotes')}
-              />
-              <span className="toggle-label">Include Analysis Notes</span>
-            </label>
-          </div>
-        </div>
-
         {/* Action Buttons */}
         <div className="results-actions">
-          <button className="action-btn primary-btn" onClick={handleDownloadReport}>
-            <FaDownload /> Download Report as PDF
+          <button className="action-btn primary-btn" onClick={() => setShowReportConfig(!showReportConfig)}>
+            <FaDownload /> {showReportConfig ? 'Hide Options' : 'Download My Results'}
           </button>
           <button className="action-btn secondary-btn" onClick={() => navigate('/')}>
             <FaHome /> Return Home
           </button>
         </div>
+
+        {/* Report Download Configuration UI - shown only when toggled */}
+        {showReportConfig && (
+          <div className="report-config-panel">
+            <div className="report-config-title">
+              <FaDownload /> Report Download Options
+            </div>
+            <div className="config-toggles">
+              <label className="toggle-item">
+                <input 
+                  type="checkbox" 
+                  checked={reportSettings.includeImage} 
+                  onChange={() => handleToggleSetting('includeImage')}
+                />
+                <span className="toggle-label">Include Image</span>
+              </label>
+              <label className="toggle-item">
+                <input 
+                  type="checkbox" 
+                  checked={reportSettings.includeRecommendations} 
+                  onChange={() => handleToggleSetting('includeRecommendations')}
+                />
+                <span className="toggle-label">Include Recommendations</span>
+              </label>
+              <label className="toggle-item">
+                <input 
+                  type="checkbox" 
+                  checked={reportSettings.includeAssessmentAnswers} 
+                  onChange={() => handleToggleSetting('includeAssessmentAnswers')}
+                />
+                <span className="toggle-label">Include Assessment Answers</span>
+              </label>
+              <label className="toggle-item">
+                <input 
+                  type="checkbox" 
+                  checked={reportSettings.includeAnalysisNotes} 
+                  onChange={() => handleToggleSetting('includeAnalysisNotes')}
+                />
+                <span className="toggle-label">Include Analysis Notes</span>
+              </label>
+            </div>
+            <button className="action-btn primary-btn download-report-btn" onClick={handleDownloadReport}>
+              <FaDownload /> Download Report as PDF
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
