@@ -288,7 +288,7 @@ function ResultsPage() {
             ⚠️ Clinical Notice
           </div>
           <div style="font-size: 1.25rem; font-weight: 700; color: #2d3748; line-height: 1.4;">
-            For a more personalized recommendation, contact a professional
+            For a more personalized recommendation, contact a dermatologist
           </div>
         </div>
       </div>`;
@@ -474,7 +474,7 @@ function ResultsPage() {
 
             {/* Clinical Disclaimer moved here */}
             <div className="recommendation-note">
-              <p><strong>Clinical Note:</strong> For a more personalized recommendation, contact a professional</p>
+              <p><strong>Clinical Note:</strong> For a more personalized recommendation, contact a dermatologist</p>
             </div>
 
             {/* Book Appointment - sticky with conditions */}
