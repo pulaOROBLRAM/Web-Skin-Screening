@@ -103,7 +103,7 @@ body {
 .results-content {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 4rem; /* Reduced top padding from 4rem to 1.5rem (~half) */
+  padding: 0.75rem 1.5rem 4rem; /* Reduced top padding from 1.5rem to 0.75rem */
   width: 100%;
   flex: 1;
 }
@@ -111,7 +111,7 @@ body {
 /* Header */
 .results-header {
   text-align: center;
-  margin-bottom: 1.5rem; /* Reduced from 5rem to bring content up */
+  margin-bottom: 0.75rem; /* Reduced from 1.5rem to bring content up */
 }
 
 .results-header h1 {
