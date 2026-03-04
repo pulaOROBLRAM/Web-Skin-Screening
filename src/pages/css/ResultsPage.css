@@ -490,9 +490,15 @@ body {
 }
 
 .conditions-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px; /* Reduced from 16px */
+}
+
+@media (max-width: 768px) {
+  .conditions-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .condition-list-item {
