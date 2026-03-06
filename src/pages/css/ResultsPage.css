@@ -264,7 +264,7 @@ body {
 
 /* Assessment Answers Section */
 .assessment-answers-section {
-  margin-bottom: 5rem;
+  margin-bottom: 2rem;
 }
 
 .assessment-answers-section .answers-list {
@@ -324,7 +324,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
-  padding: 3rem 0;
+  padding: 1.5rem 0;
   border-top: 1px solid var(--border-light);
 }
 
@@ -773,8 +773,8 @@ body {
 .report-config-panel {
   background: white;
   border-radius: 20px;
-  padding: 30px;
-  margin-top: 40px;
+  padding: 20px;
+  margin-top: 20px;
   margin-bottom: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-light);
@@ -844,7 +844,7 @@ body {
 }
 
 .download-report-btn {
-  margin-top: 20px;
+  margin-top: 15px;
   width: 100%;
   justify-content: center;
 }
