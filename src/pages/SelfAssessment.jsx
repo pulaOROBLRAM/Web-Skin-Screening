@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRight, faArrowLeft, faHome, faStethoscope } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './css/SelfAssessment.css';
-import { DISEASES } from './ConditionAttr';
+import { DISEASES } from '../data/diseases';
 import {
   TRIAGE_QUESTIONS,
   resolveCategory,
