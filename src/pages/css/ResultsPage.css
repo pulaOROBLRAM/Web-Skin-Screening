@@ -563,15 +563,14 @@ body {
 .analysis-image-container {
   background: white;
   border-radius: 20px;
-  padding: 12px; /* Reduced padding */
+  padding: 0; /* Removed padding to eliminate explicit white space */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px; /* Reduced from 280px */
-  max-height: 280px; /* Reduced from 380px */
   overflow: hidden;
+  height: auto;
 }
 
 .image-wrapper {
@@ -580,14 +579,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #f8fafc; /* subtle background if aspect ratio leaves gaps */
 }
 
 .image-wrapper img {
-  max-width: 100%;
-  max-height: 250px; /* Reduced from 350px */
-  object-fit: contain;
+  width: 100%;
+  max-height: 350px;
+  object-fit: cover; /* Use cover to fill the container without white bars */
   display: block;
-  border-radius: 12px;
+  border-radius: 20px; /* Match the container's radius */
 }
 
 .recommendations-container {
