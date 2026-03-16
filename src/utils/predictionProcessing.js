@@ -3,7 +3,7 @@
  * Handles top prediction extraction and formatting
  */
 
-import { CONDITION_DESCRIPTIONS } from '../data/conditions';
+import { CONDITION_DESCRIPTIONS } from '../data/descriptions';
 
 /**
  * Extract top prediction and enrich with detailed information
