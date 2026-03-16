@@ -3,13 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/free-solid-svg-icons';
 import {
-  FaChartBar,
-  FaListUl,
   FaDownload,
   FaHome,
-  FaCheckCircle,
   FaExclamationTriangle,
-  FaBandAid,
   FaStethoscope
 } from 'react-icons/fa';
 import './css/ResultsPage.css';
@@ -17,44 +13,18 @@ import { CONFIG } from '../config';
 
 // Utility imports
 import {
-  getTopPredictionWithDetails,
-  findConditionDescription,
-  formatDiseaseName
+  findConditionDescription
 } from '../utils/predictionProcessing';
-
-import {
-  calculateWeightedResults
-} from './SelfAssessment';
-
-import {
-  CATEGORY_QUESTIONS,
-  getTargetCategory,
-  getTopPrediction
-} from './selfAssessmentQuestions';
-
-import { formatAssessmentAnswers } from '../utils/assessmentFormatter';
-
-const DISPLAY_THRESHOLDS = {
-  'INFLAMMATORY': 0,
-  'INFECTIOUS': 0,
-  'AUTOIMMUNE': 0,
-  'BENIGN_GROWTH': 0,
-  'PIGMENTARY': 0,
-  'SKIN_CANCER': 0,
-  'ENVIRONMENTAL': 0,
-  'DEFAULT': 0
-};
+import { diagnose } from '../utils/diagnosis';
+import { ASSESSMENT } from '../data/selfAssessmentQuestions';
 
 function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const predictions = location.state?.predictions;
   const capturedImage = location.state?.capturedImage;
-  const assessmentData = location.state?.answers;
-  const assessmentQuestions = location.state?.assessmentQuestions; // This is key!
-  const diseaseScores = location.state?.diseaseScores;
-  const isAdaptive = location.state?.adaptive || false;
+  const assessmentAnswersRaw = location.state?.answers;
 
+  // Report download configuration (kept intact)
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
   const [showReportConfig, setShowReportConfig] = useState(false);
 
@@ -65,23 +35,16 @@ function ResultsPage() {
     }));
   };
 
-  const assessmentAnswers = formatAssessmentAnswers(assessmentData, assessmentQuestions);
+  const hasAnswers = Boolean(assessmentAnswersRaw && Object.keys(assessmentAnswersRaw).length > 0);
 
-  console.log('ResultsPage received:', {
-    predictions,
-    diseaseScores,
-    assessmentData,
-    isAdaptive
-  });
-
-  if (!predictions || !capturedImage) {
+  if (!capturedImage) {
     return (
       <div className="results-container">
         <div className="results-content">
           <div className="error-state">
             <FaExclamationTriangle className="error-icon" />
             <h2>Error</h2>
-            <p>No analysis results available.</p>
+            <p>No image available.</p>
             <button className="action-btn secondary-btn" onClick={() => navigate('/')}>
               <FaHome /> Return Home
             </button>
@@ -91,114 +54,38 @@ function ResultsPage() {
     );
   }
 
-  const topPrediction = getTopPredictionWithDetails(predictions);
+  // Diagnosis results are driven purely by the self-assessment.
+  const allDiseaseResults = hasAnswers ? diagnose({ answers: assessmentAnswersRaw, topN: 4 }) : [];
 
-  const urgencyLevel =
-    topPrediction?.probability > 0.7 && (topPrediction?.condition === 'MEL' || topPrediction?.condition === 'SCC')
-      ? 'high'
-      : topPrediction?.probability > 0.5
-        ? 'moderate'
-        : 'low';
+  const toAssessmentAnswerList = (rawAnswers) => {
+    if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
-  const getAllCategoriesResults = () => {
-    const results = [];
-    
-    // --- Case A: Adaptive flow (Merged Clinical + AI) ---
-    if (isAdaptive && diseaseScores && Object.keys(diseaseScores).length > 0) {
-      const topPredString = getTopPrediction(predictions);
-      const targetCategory = getTargetCategory(topPredString);
-      
-      // 1. Start with Clinical scores (already filtered by category)
-      const clinicalEntries = Object.entries(diseaseScores).map(([disease, score]) => ({
-        disease,
-        score: score * 1.5, // Give clinical data a slight boost weight
-        category: targetCategory,
-        origin: 'clinical'
-      }));
+    const questionOrder = ['q1', 'q2', 'q3', 'q4'];
+    const prompts = {
+      q1: 'What best describes what you see?',
+      q2: 'What does it feel like?',
+      q3: 'How is it changing over time?',
+      q4: 'Any associated symptoms?'
+    };
 
-      // 2. Map AI raw predictions
-      const aiEntries = Object.entries(predictions.predictions || {}).map(([disease, prob]) => ({
-        disease: disease.replace(/_/g, ' '),
-        score: prob * 10, // Scale AI 0.0-1.0 to 0-10 range to match clinical base
-        category: getTargetCategory(disease),
-        origin: 'ai'
-      }));
-
-      // 3. Merge them (Sum scores if disease appears in both)
-      const mergedMap = {};
-      
-      [...clinicalEntries, ...aiEntries].forEach(item => {
-        const key = item.disease.toLowerCase().replace(/\s+/g, '_');
-        if (!mergedMap[key]) {
-          mergedMap[key] = { ...item, score: item.score };
-        } else {
-          mergedMap[key].score += item.score;
-          // Upgrade category if clinical has a better guess
-          if (item.origin === 'clinical') mergedMap[key].category = item.category;
-        }
+    return questionOrder
+      .filter((qKey) => typeof rawAnswers[qKey] === 'string' && rawAnswers[qKey] !== '')
+      .map((qKey) => {
+        const choiceKey = rawAnswers[qKey];
+        const answerText = ASSESSMENT?.[qKey]?.[choiceKey] || choiceKey;
+        return { questionId: qKey, question: prompts[qKey] || qKey, answer: answerText };
       });
-
-      results.push(...Object.values(mergedMap));
-    } 
-    // --- Case B: Legacy flow (Pre-adaptive) ---
-    else if (assessmentData) {
-      const categories = ['INFLAMMATORY', 'INFECTIOUS', 'AUTOIMMUNE', 'BENIGN_GROWTH', 'PIGMENTARY', 'SKIN_CANCER', 'ENVIRONMENTAL'];
-      
-      categories.forEach(category => {
-        const weightedCategories = calculateWeightedResults(assessmentData, topPrediction?.condition);
-        const categoryData = weightedCategories?.[category];
-        
-        if (categoryData && Object.keys(categoryData).length > 0) {
-          const categoryDiseases = Object.entries(categoryData)
-            .map(([disease, score]) => ({
-              disease,
-              score,
-              category: category
-            }));
-          
-          results.push(...categoryDiseases);
-        }
-      });
-    }
-
-    // First, sort all results by score
-    const sortedResults = results.sort((a, b) => b.score - a.score);
-    
-    // Take top 4 results
-    const TOP_RESULTS_COUNT = 4;
-    const topResults = sortedResults.slice(0, TOP_RESULTS_COUNT);
-    
-    // Calculate total score based ONLY on top results
-    const topResultsTotal = topResults.reduce((sum, item) => sum + item.score, 0);
-    
-    // Calculate percentages based on top results total
-    const finalResults = topResults.map(item => {
-      const percentage = topResultsTotal > 0 ? (item.score / topResultsTotal) * 100 : 0;
-      
-      return {
-        disease: item.disease,
-        percentage: Number(percentage.toFixed(0)), // Round to whole number
-        score: item.score,
-        category: item.category
-      };
-    });
-
-    console.log('Top results with recalculated percentages:', finalResults);
-    console.log('Sum of percentages:', finalResults.reduce((sum, r) => sum + r.percentage, 0));
-
-    return finalResults;
   };
 
-  const allDiseaseResults = getAllCategoriesResults();
+  const assessmentAnswers = toAssessmentAnswerList(assessmentAnswersRaw);
   
-  // Get the enriched details for the primary match (weighted result)
+  // Primary match details (pulled from local condition descriptions)
   const primaryMatch = allDiseaseResults.length > 0 ? allDiseaseResults[0] : null;
   const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.disease) : null;
   
-  // Fallback to topPrediction if primaryMatch details are missing
   const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0) 
     ? primaryMatchDetails 
-    : topPrediction;
+    : null;
 
   const handleDownloadReport = () => {
     const settings = reportSettings;
@@ -235,27 +122,6 @@ function ResultsPage() {
           </tbody>
         </table>
       </div>`;
-
-    const assessmentSection = settings.includeAssessmentAnswers ? `
-      <div class="section">
-        <div class="section-title">Clinical Intake & Symptoms</div>
-        <table style="border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <thead>
-            <tr style="background-color: #f1f5f9;">
-              <th style="padding: 15px; border: none; width: 60%;">Assessment Question</th>
-              <th style="padding: 15px; border: none;">Patient Response</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${assessmentAnswers.map((item, idx) => `
-              <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0;">${item.question}</td>
-                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: 600; color: ${settings.primaryColor};">${item.answer}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>` : '';
 
     const recommendationsSection = settings.includeRecommendations ? `
       <div class="section">
@@ -389,7 +255,6 @@ function ResultsPage() {
           ${imageSection}
           ${resultsSection}
           ${clinicalNoteSection}
-          ${assessmentSection}
           ${recommendationsSection}
           ${analysisNotesSection}
 
@@ -466,7 +331,7 @@ function ResultsPage() {
                   );
                 })
               ) : (
-                <div className="no-conditions">No Conditions Detected</div>
+                <div className="no-conditions">Complete the self-assessment to see results.</div>
               )}
             </div>
 
@@ -586,14 +451,6 @@ function ResultsPage() {
                   onChange={() => handleToggleSetting('includeRecommendations')}
                 />
                 <span className="toggle-label">Include Recommendations</span>
-              </label>
-              <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeAssessmentAnswers} 
-                  onChange={() => handleToggleSetting('includeAssessmentAnswers')}
-                />
-                <span className="toggle-label">Include Assessment Answers</span>
               </label>
               <label className="toggle-item">
                 <input 
