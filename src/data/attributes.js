@@ -1,5 +1,49 @@
 export const attributes = {
   RASH_OR_REDNESS: {
+    "Acne": {
+      lesionForm: ["papule", "pustule", "nodule", "cyst", "comedone"],
+      surface: ["oily", "inflamed", "non-inflamed"],
+      color: ["red", "skin-colored", "white", "black", "yellowish"],
+      border: ["ill-defined", "erythematous"],
+      distribution: ["face", "chest", "upper back", "shoulders", "neck"],
+      configuration: ["solitary", "clustered", "scattered"],
+      sensation: ["painful", "tender", "asymptomatic"],
+      chronicity: ["chronic", "relapsing", "waxes and wanes"],
+      triggers: ["hormonal changes", "stress", "menstruation", "comedogenic cosmetics", "diet"],
+      associatedFindings: ["seborrhea", "scarring", "hyperpigmentation", "oily skin"],
+      demographics: ["adolescents", "young adults", "can persist into adulthood"],
+      morphology: ["open comedones (blackheads)", "closed comedones (whiteheads)", "inflammatory papules", "pustules", "nodules", "cysts"]
+    },
+    "Dermatitis": {
+      lesionForm: ["patch", "plaque", "papule", "vesicle (acute)"],
+      surface: ["dry", "scaly", "lichenified", "weeping (acute)", "crusted"],
+      color: ["red", "erythematous", "pink", "brownish (chronic)"],
+      border: ["ill-defined", "poorly demarcated"],
+      distribution: ["flexural surfaces", "face", "hands", "generalized", "localized"],
+      configuration: ["diffuse", "confluent", "discrete"],
+      sensation: ["itchy", "intensely pruritic"],
+      chronicity: ["acute", "subacute", "chronic", "relapsing"],
+      triggers: ["irritants", "allergens", "dry skin", "stress", "weather changes"],
+      associatedFindings: ["xerosis", "excoriations", "lichenification", "fissures"],
+      demographics: ["all ages", "atopic individuals"],
+      morphology: ["acute: vesicles, weeping", "subacute: crusts, scales", "chronic: lichenification, fissures"],
+      types: ["atopic dermatitis", "contact dermatitis", "seborrheic dermatitis", "stasis dermatitis"]
+    },
+    "Ringworm": {
+      lesionForm: ["patch", "plaque", "annular lesion"],
+      surface: ["scaly", "raised border", "clearing center"],
+      color: ["red", "erythematous", "brownish"],
+      border: ["active", "raised", "well-defined", "advancing"],
+      distribution: ["body (tinea corporis)", "scalp (tinea capitis)", "feet (tinea pedis)", "groin (tinea cruris)"],
+      configuration: ["annular", "circular", "polycyclic", "concentric rings"],
+      sensation: ["itchy", "pruritic"],
+      chronicity: ["acute", "persistent without treatment"],
+      triggers: ["dermatophyte fungi", "contact with infected humans/animals", "warm moist environments"],
+      associatedFindings: ["central clearing", "scale", "kerion (inflamed)", "hair loss"],
+      demographics: ["all ages", "more common in warm climates"],
+      morphology: ["annular plaque with raised border", "central clearing", "scaly", "may have pustules"],
+      types: ["tinea corporis", "tinea capitis", "tinea pedis", "tinea cruris", "tinea manuum", "tinea unguium"]
+    },
     "Psoriasis": {
       lesionForm: ["plaque", "patch"],
       surface: ["scaly", "silvery"],
@@ -73,20 +117,36 @@ export const attributes = {
   },
 
   GROWTH_OR_LUMP: {
+    "Molluscum Contagiosum": {
+      lesionForm: ["papule", "nodule"],
+      surface: ["smooth", "waxy", "umbilicated", "pearly"],
+      color: ["skin-colored", "pink", "white", "translucent"],
+      border: ["well-defined", "sharp"],
+      distribution: ["face", "trunk", "extremities", "genitals", "flexural areas"],
+      configuration: ["solitary", "grouped", "clustered", "linear (koebner)"],
+      sensation: ["asymptomatic", "mildly itchy", "tender if inflamed"],
+      chronicity: ["self-limited", "months to years", "can persist in immunocompromised"],
+      triggers: ["poxvirus infection", "direct contact", "fomites", "swimming pools", "atopic dermatitis"],
+      associatedFindings: ["umbilication", "dermatitis surrounding lesions", "giant molluscum"],
+      demographics: ["children 1-10yrs", "sexually active adults", "immunocompromised"],
+      morphology: ["dome-shaped", "umbilicated center", "flesh-colored", "waxy", "2-5mm"],
+      diagnosis: ["clinical", "central plug on histology", "Henderson-Patterson bodies"]
+    },
     "Warts": {
       lesionForm: ["papule", "nodule", "plaque"],
-      surface: ["rough", "verrucous", "papillomatous", "hyperkeratotic"],
+      surface: ["rough", "verrucous", "papillomatous", "hyperkeratotic", "cauliflower-like"],
       color: ["skin-colored", "gray", "brown", "yellowish"],
       border: ["well-defined", "sharp"],
-      distribution: ["hands", "feet", "face", "genitals", "knees"],
-      configuration: ["solitary", "grouped", "coalescing", "mosaic"],
+      distribution: ["hands", "fingers", "feet", "face", "knees", "genitals"],
+      configuration: ["solitary", "grouped", "coalescing", "mosaic (plantar)"],
       sensation: ["asymptomatic", "tender with pressure", "painful on feet"],
       chronicity: ["persistent", "can resolve spontaneously", "recalcitrant"],
-      triggers: ["HPV infection", "trauma", "immunosuppression", "wet environments"],
-      associatedFindings: ["black dots (thrombosed capillaries)", "koebner phenomenon"],
+      triggers: ["HPV infection", "direct contact", "trauma", "immunosuppression", "wet environments"],
+      associatedFindings: ["black dots (thrombosed capillaries)", "koebner phenomenon", "bleeding with paring"],
       demographics: ["children", "young adults", "immunocompromised"],
-      morphology: ["exophytic", "endophytic", "filiform", "flat-topped"],
-      subTypes: ["common wart (verruca vulgaris)", "plantar wart", "flat wart", "filiform wart", "genital wart"]
+      morphology: ["exophytic", "endophytic", "filiform", "flat-topped", "mosaic"],
+      subTypes: ["verruca vulgaris (common wart)", "verruca plantaris (plantar wart)", "verruca plana (flat wart)", "verruca filiformis", "condyloma acuminatum (genital wart)"],
+      diagnosis: ["clinical", "dermatoscopy", "paring sign", "HPV typing"]
     },
     "Seborrheic_Keratosis": {
       lesionForm: ["papule", "plaque", "patch"],
@@ -231,18 +291,18 @@ export const attributes = {
   CHANGE_IN_COLOR_ONLY: {
     "Vitiligo": {
       lesionForm: ["macule", "patch"],
-      surface: ["smooth", "normal texture"],
-      color: ["depigmented", "chalk-white"],
-      border: ["well-defined", "sharp", "hyperpigmented border"],
-      distribution: ["periorificial", "acral", "flexural", "generalized", "segmental"],
-      configuration: ["symmetrical", "segmental", "generalized", "focal"],
-      sensation: ["asymptomatic", "no sensation"],
+      surface: ["smooth", "normal texture", "non-scaly"],
+      color: ["depigmented", "chalk-white", "ivory"],
+      border: ["well-defined", "sharp", "hyperpigmented border", "serrated"],
+      distribution: ["periorificial (eyes, mouth)", "acral (hands, feet)", "flexural", "generalized", "segmental"],
+      configuration: ["symmetrical", "segmental", "focal", "generalized"],
+      sensation: ["asymptomatic"],
       chronicity: ["progressive", "stable", "can repigment"],
       triggers: ["autoimmune", "oxidative stress", "trauma (koebner)", "emotional stress"],
       associatedFindings: ["leukotrichia", "autoimmune thyroid disease", "halo nevi"],
       demographics: ["all ages", "any race", "onset <20yrs in half"],
-      morphology: ["well-demarcated white patches", "koebner phenomenon"],
-      types: ["segmental", "non-segmental (generalized)", "focal", "acrofacial"]
+      morphology: ["well-demarcated white patches", "koebner phenomenon", "confetti-like depigmentation"],
+      types: ["segmental", "non-segmental (generalized)", "focal", "acrofacial", "universal"]
     },
     "Melasma": {
       lesionForm: ["macule", "patch"],
@@ -306,3 +366,26 @@ export const attributes = {
     }
   }
 };
+
+// Helper function to get disease names by index
+export const diseaseIndexMap = {
+  "0": "Acne",
+  "1": "Dermatitis", 
+  "2": "Molluscum Contagiosum",
+  "3": "Ringworm",
+  "4": "Vitiligo",
+  "5": "Warts"
+};
+
+// Helper to get attributes by index
+export function getDiseaseAttributesByIndex(index) {
+  const diseaseName = diseaseIndexMap[index];
+  
+  // Search through all categories to find the disease
+  for (const category of Object.values(attributes)) {
+    if (category[diseaseName]) {
+      return category[diseaseName];
+    }
+  }
+  return null;
+}
