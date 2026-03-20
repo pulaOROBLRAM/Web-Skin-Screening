@@ -188,12 +188,24 @@ class PredictionService:
             else:
                 preds = self._output_processor.extract_probabilities(raw_output)
 
-            # Step 5: Format result
+            # Step 5: Confidence threshold check
+            # If the model isn't confident enough, the image is likely not a skin lesion
+            CONFIDENCE_THRESHOLD = 0.50
+            top_confidence = float(np.max(preds))
+
+            if top_confidence < CONFIDENCE_THRESHOLD:
+                return {
+                    "success": False,
+                    "error": "non_skin_image",
+                    "message": "The uploaded image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area."
+                }
+
+            # Step 6: Format result
             result = {
                 "success": True,
                 "predictions": {self.class_names[i]: float(p) for i, p in enumerate(preds)},
                 "top_prediction": self.class_names[np.argmax(preds)],
-                "confidence": float(np.max(preds))
+                "confidence": top_confidence
             }
             return result
 

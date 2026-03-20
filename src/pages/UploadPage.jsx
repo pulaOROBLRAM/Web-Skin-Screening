@@ -98,6 +98,12 @@ function UploadPage() {
           },
         });
 
+        // Check if backend flagged the image as non-skin
+        if (response.data.success === false && response.data.error === 'non_skin_image') {
+          setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
+          return;
+        }
+
         navigate('/assessment', {
           state: {
             capturedImage: selectedImage,
