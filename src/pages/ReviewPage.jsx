@@ -54,8 +54,8 @@ function ReviewPage() {
 
   const handleSubmit = () => {
     if (imageData) {
-      // Navigate to assessment with the image
-      navigate('/assessment', {
+      // No self-assessment flow anymore; go to upload to analyze
+      navigate('/upload', {
         state: {
           capturedImage: imageData
         }
@@ -111,7 +111,7 @@ function ReviewPage() {
           onClick={handleSubmit}
           disabled={!imageData}
         >
-          Proceed with Self-Assessment <FontAwesomeIcon icon={faArrowRight} />
+          Proceed to Analysis <FontAwesomeIcon icon={faArrowRight} />
         </button>
       </div>
 

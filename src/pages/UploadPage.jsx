@@ -16,6 +16,7 @@ function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
+    // If arriving from camera flow, reuse the captured image.
     if (location.state?.capturedImage) {
       setSelectedImage(location.state.capturedImage);
       setImageSource('camera');
@@ -117,10 +118,8 @@ function UploadPage() {
         if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
           errorMessage = 'Cannot connect to the server. Please make sure the backend server is running on port 5000.';
         } else if (err.response) {
-          // Server responded with error status
           errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
         } else if (err.request) {
-          // Request was made but no response received
           errorMessage = 'No response from server. Please check if the backend is running.';
         }
 
@@ -256,7 +255,7 @@ function UploadPage() {
 
               <div className="preview-info-panel">
                 <h2 className="preview-title">Image Ready</h2>
-                <p className="preview-desc">Review your photo before proceeding to the self-assessment questionnaire.</p>
+                <p className="preview-desc">Review your photo before proceeding to view your results.</p>
 
                 <div className="preview-actions-group">
                   <button
@@ -278,7 +277,7 @@ function UploadPage() {
                       </>
                     ) : (
                       <>
-                        Continue to Assessment <FontAwesomeIcon icon={faArrowRight} />
+                        Continue to Results <FontAwesomeIcon icon={faArrowRight} />
                       </>
                     )}
                   </button>
