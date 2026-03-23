@@ -7,6 +7,7 @@ function SelfAssessment() {
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
+  const modelPrediction = location.state?.modelPrediction || null;
 
   // Static 4-step intake. The answer keys (`a`..`d`) map to `src/data/diseases.js` scoring rules.
   const steps = useMemo(
@@ -14,13 +15,15 @@ function SelfAssessment() {
       { key: 'q1', title: 'Question 1', prompt: 'What best describes what you see?' },
       { key: 'q2', title: 'Question 2', prompt: 'What does it feel like?' },
       { key: 'q3', title: 'Question 3', prompt: 'How is it changing over time?' },
-      { key: 'q4', title: 'Question 4', prompt: 'Any associated symptoms?' }
+      { key: 'q4', title: 'Question 4', prompt: 'Where is it located?' }
     ]),
     []
   );
 
   const [stepIdx, setStepIdx] = useState(0);
   const [answers, setAnswers] = useState({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState(null);
 
   const step = steps[stepIdx];
   const optionsObj = ASSESSMENT?.[step.key] || {};
@@ -55,15 +58,28 @@ function SelfAssessment() {
     if (stepIdx > 0) setStepIdx(stepIdx - 1);
   };
 
-  // Persist + go to results (results page will compute diagnosis from these answers)
+  // Persist + go to results (results page will compute diagnosis from model+assessment data)
   const handleComplete = () => {
+    if (!capturedImage) {
+      setError('No image found to analyze. Please upload an image.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError(null);
+
+    // Save answers for local persistence + review
     localStorage.setItem('assessmentAnswers', JSON.stringify(answers));
+
     navigate('/results', {
       state: {
         capturedImage,
-        answers
+        answers,
+        modelPrediction
       }
     });
+
+    setIsAnalyzing(false);
   };
 
   const isLast = stepIdx === steps.length - 1;
@@ -73,6 +89,8 @@ function SelfAssessment() {
       <div className="assessment-card">
         <h1 className="assessment-title">Self-Assessment</h1>
         <p className="assessment-note">{step.title}</p>
+        {error && <div className="assessment-error">{error}</div>}
+        {isAnalyzing && <div className="assessment-loading">Analyzing image via ML model... please wait.</div>}
 
         <h3 className="question-text">{step.prompt}</h3>
 

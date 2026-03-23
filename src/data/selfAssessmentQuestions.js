@@ -18,10 +18,9 @@ export const ASSESSMENT = {
     d: "Appeared fast"
   },
   q4: {
-    a: "Fever/chills",
-    b: "Feeling sick/tired",
-    c: "Joint/muscle pain",
-    d: "None"
+    a: "Face or scalp",
+    b: "Hands, feet, or nails",
+    c: "Body (chest, back, arms, legs)",
+    d: "Multiple areas / widespread"
   }
 };
-

@@ -1,93 +1,145 @@
-/**
- * Prediction processing utilities
- * Handles top prediction extraction and formatting
- */
-
+// src/utils/predictionProcessing.js
 import { CONDITION_DESCRIPTIONS } from '../data/descriptions';
+import { getTopDiagnoses } from './diagnosis';
+import { getTopSimilarDiseases, getSimilarity } from '../models/symptomSimilarityModel';
 
-/**
- * Extract top prediction and enrich with detailed information
- * @param {Object} predictions - Raw predictions from API
- * @returns {Object|null} - Top prediction with enriched details
- */
-export function getTopPredictionWithDetails(predictions) {
-  if (!predictions?.predictions) return null;
-  
-  const sortedPredictions = Object.entries(predictions.predictions)
-    .map(([condition, probability]) => {
-      const desc = CONDITION_DESCRIPTIONS[condition] || {};
-      return {
-        condition,
-        probability,
-        name: desc.name || condition,
-        description: desc.description,
-        description1: desc.description1,
-        treatment: desc.treatment || "Unknown",
-        recommendations: desc.recommendations || [],
-        severity: desc.severity || "Unknown",
-        causes: desc.causes || ""
-      };
-    })
-    .sort((a, b) => b.probability - a.probability);
-  
-  return sortedPredictions.length > 0 ? sortedPredictions[0] : null;
-}
+export const findConditionDescription = (diseaseName) => {
+  if (!diseaseName) {
+    return {
+      name: 'Unknown Condition',
+      description: 'Please consult a dermatologist for evaluation.',
+      causes: 'Unable to determine specific causes.'
+    };
+  }
 
-/**
- * Find condition description by disease name with multiple format attempts
- * @param {string} diseaseName - Disease name in various formats
- * @returns {Object} - Condition description object
- */
-export function findConditionDescription(diseaseName) {
-  // Try transformation variants
-  const key1 = diseaseName.replace(/_/g, ' ');
-  const key2 = diseaseName.replace(/_/g, '').replace(/\b\w/g, l => l.toUpperCase());
-  const key3 = diseaseName.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-  ).join(' ');
-  
-  if (CONDITION_DESCRIPTIONS[key1]) return CONDITION_DESCRIPTIONS[key1];
-  if (CONDITION_DESCRIPTIONS[key2]) return CONDITION_DESCRIPTIONS[key2];
-  if (CONDITION_DESCRIPTIONS[key3]) return CONDITION_DESCRIPTIONS[key3];
-  
-  // Find by name property
-  const found = Object.values(CONDITION_DESCRIPTIONS).find(desc => 
-    desc?.name && 
-    desc.name.toLowerCase().replace(/\s+/g, '') === 
-    diseaseName.toLowerCase().replace(/_/g, '')
-  );
-  
-  return found || {};
-}
-
-/**
- * Format disease name for display
- * @param {string} diseaseName - Raw disease name
- * @param {Object} conditionInfo - Condition description object
- * @returns {string} - Formatted disease name
- */
-export function formatDiseaseName(diseaseName, conditionInfo) {
-  if (conditionInfo?.name) {
-    return conditionInfo.name;
+  // Try direct match
+  if (CONDITION_DESCRIPTIONS[diseaseName]) {
+    return CONDITION_DESCRIPTIONS[diseaseName];
   }
   
-  return diseaseName
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ') || diseaseName.replace(/_/g, ' ');
-}
+  // Try with underscores replaced by spaces
+  const withSpaces = diseaseName.replace(/_/g, ' ');
+  const match = Object.keys(CONDITION_DESCRIPTIONS).find(
+    key => key.toLowerCase() === withSpaces.toLowerCase()
+  );
+  
+  if (match) {
+    return CONDITION_DESCRIPTIONS[match];
+  }
+  
+  // Return default
+  return {
+    name: diseaseName.replace(/_/g, ' '),
+    description: 'Please consult a dermatologist for evaluation.',
+    causes: 'Clinical assessment required.'
+  };
+};
 
-/**
- * Get CSS severity class based on severity text
- * @param {string} severity - Severity description
- * @returns {string} - CSS class ('high', 'medium', 'low')
- */
-export function getSeverityClass(severity) {
-  if (!severity) return 'low';
-  
-  const lowercased = severity.toLowerCase();
-  if (lowercased.includes('high')) return 'high';
-  if (lowercased.includes('medium')) return 'medium';
-  
-  return 'low';
-}
+export const normalizePredictionName = (name) => name?.replace(/\s+/g, '_').replace(/[.,]/g, '').trim();
+
+export const formatModelPrediction = (predictionResponse) => {
+  if (!predictionResponse || !predictionResponse.success) {
+    return null;
+  }
+  return {
+    topPrediction: normalizePredictionName(predictionResponse.top_prediction),
+    confidence: Number(predictionResponse.confidence ?? 0),
+    rawScores: predictionResponse.predictions || {}
+  };
+};
+
+export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 5 }) => {
+  const surveyResults = getTopDiagnoses(assessmentAnswers || {}, topN);
+
+  const modelTop = modelPrediction?.topPrediction || surveyResults[0]?.id;
+
+  const modelScore = (modelPrediction?.confidence || 0);
+  const surveyScore = (surveyResults[0]?.matchPercentage || 0) / 100;
+
+  const similarityCandidates = modelTop ? getTopSimilarDiseases(modelTop, topN) : [];
+
+  const combinedList = new Map();
+
+  // Start with survey-based
+  surveyResults.forEach((item) => {
+    const id = item.id;
+    combinedList.set(id, {
+      id,
+      label: id.replace(/_/g, ' '),
+      source: 'self-assessment',
+      surveyMatch: item.matchPercentage / 100,
+      modelMatch: 0,
+      similarityToModel: modelTop ? getSimilarity(id, modelTop) : 0,
+      score: (item.matchPercentage / 100) * 0.65
+    });
+  });
+
+  // Add model top prediction and neighbors
+  if (modelTop) {
+    const modelCandidate = {
+      id: modelTop,
+      label: modelTop.replace(/_/g, ' '),
+      source: 'model',
+      surveyMatch: 0,
+      modelMatch: modelScore,
+      similarityToModel: 1,
+      score: modelScore * 0.85
+    };
+    combinedList.set(modelTop, {
+      ...combinedList.get(modelTop),
+      ...modelCandidate,
+      score: Math.max(combinedList.get(modelTop)?.score || 0, modelCandidate.score)
+    });
+
+    similarityCandidates.forEach((simItem) => {
+      if (!simItem.disease) return;
+      const key = simItem.disease;
+      const existing = combinedList.get(key) || {
+        id: key,
+        label: key.replace(/_/g, ' '),
+        source: 'similarity',
+        surveyMatch: 0,
+        modelMatch: 0,
+        similarityToModel: simItem.similarity,
+        score: 0
+      };
+
+      const merged = {
+        ...existing,
+        similarityToModel: Math.max(existing.similarityToModel || 0, simItem.similarity),
+        score: Math.max(existing.score || 0, simItem.similarity * 0.65)
+      };
+      combinedList.set(key, merged);
+    });
+  }
+
+  // Convert, score, sort, and take topN
+  const scoredArray = Array.from(combinedList.values())
+    .map((item) => ({
+      ...item,
+      source: 'fused',
+      finalScore: Number((item.score + (item.surveyMatch || 0) * 0.25 + (item.modelMatch || 0) * 0.15).toFixed(3)),
+      explanation: {
+        surveyMatch: item.surveyMatch || 0,
+        modelMatch: item.modelMatch || 0,
+        similarityToModel: item.similarityToModel || 0
+      }
+    }))
+    .sort((a, b) => b.finalScore - a.finalScore)
+    .slice(0, topN);
+
+  const totalFinal = scoredArray.reduce((sum, item) => sum + item.finalScore, 0);
+
+  const combinedArray = scoredArray.map((item) => ({
+    ...item,
+    finalScore: totalFinal > 0 ? Number((item.finalScore / totalFinal).toFixed(4)) : 0
+  }));
+
+  return {
+    modelPrediction,
+    surveyResults,
+    similarityCandidates,
+    topDisease: modelTop,
+    combined: combinedArray
+  };
+};

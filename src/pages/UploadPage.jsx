@@ -83,23 +83,49 @@ function UploadPage() {
   };
 
   const handleProceed = async () => {
-    if (selectedImage) {
-      setLoading(true);
-      setError(null);
+    if (!selectedImage) {
+      setError('No image selected. Please upload an image first.');
+      return;
+    }
 
-      try {
-        // Model inference is disabled; proceed directly to self-assessment.
-        navigate('/assessment', {
-          state: {
-            capturedImage: selectedImage
-          }
-        });
-      } catch (err) {
-        console.error('Error details:', err);
-        setError('Error proceeding. Please try again.');
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const file = dataURLtoFile(selectedImage, 'skin-input.jpg');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Model inference failed (${response.status})`);
       }
+
+      const modelPrediction = await response.json();
+
+      navigate('/assessment', {
+        state: {
+          capturedImage: selectedImage,
+          modelPrediction
+        }
+      });
+    } catch (err) {
+      console.error('Model prediction error:', err);
+      setError('Prediction failed. Please try again or use a different image.');
+
+      // If model inference fails, proceed to assessment with unavailable model result
+      navigate('/assessment', {
+        state: {
+          capturedImage: selectedImage,
+          modelPrediction: null
+        }
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

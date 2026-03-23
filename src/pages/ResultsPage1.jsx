@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage } from '@fortawesome/free-solid-svg-icons';
+import { faImage } from '@fortawesome/free-solid-svg-icons';  
 import {
   FaDownload,
   FaHome,
@@ -12,17 +12,17 @@ import './css/ResultsPage.css';
 import { CONFIG } from '../config';
 
 // Utility imports
-import {
-  findConditionDescription
-} from '../utils/predictionProcessing';
-import { diagnose } from '../utils/diagnosis';
+import { CONDITION_DESCRIPTIONS } from '../data/descriptions';
+import { getTopDiagnoses } from '../utils/diagnosis';
+import { combinePredictions, findConditionDescription } from '../utils/predictionProcessing';
 import { ASSESSMENT } from '../data/selfAssessmentQuestions';
 
 function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
-  const assessmentAnswersRaw = location.state?.answers;
+  const assessmentAnswersRaw = location.state?.answers || {};
+  const modelPrediction = location.state?.modelPrediction;
 
   // Report download configuration (kept intact)
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
@@ -36,7 +36,13 @@ function ResultsPage() {
   };
 
   const hasAnswers = Boolean(assessmentAnswersRaw && Object.keys(assessmentAnswersRaw).length > 0);
-
+  const mlAndClinicalResults = combinePredictions({
+    modelPrediction,
+    assessmentAnswers: assessmentAnswersRaw || {},
+    topN: 4
+  });
+  const combinedView = mlAndClinicalResults.combined || [];
+  const surveyView = hasAnswers ? getTopDiagnoses(assessmentAnswersRaw, 4) : [];
   if (!capturedImage) {
     return (
       <div className="results-container">
@@ -54,9 +60,7 @@ function ResultsPage() {
     );
   }
 
-  // Diagnosis results are driven purely by the self-assessment.
-  const allDiseaseResults = hasAnswers ? diagnose({ answers: assessmentAnswersRaw, topN: 4 }) : [];
-
+  // Diagnosis results are driven primarily by combined ML+similarity scores
   const toAssessmentAnswerList = (rawAnswers) => {
     if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
@@ -79,9 +83,16 @@ function ResultsPage() {
 
   const assessmentAnswers = toAssessmentAnswerList(assessmentAnswersRaw);
   
-  // Primary match details (pulled from local condition descriptions)
-  const primaryMatch = allDiseaseResults.length > 0 ? allDiseaseResults[0] : null;
-  const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.disease) : null;
+  const combinedPrimary = combinedView.length > 0 ? combinedView[0] : null;
+  const primaryMatch = combinedPrimary ? {
+    id: combinedPrimary.id,
+    matchPercentage: combinedPrimary.finalScore * 100,
+    source: combinedPrimary.source,
+    modelConfidence: combinedPrimary.modelMatch,
+    similarityToModel: combinedPrimary.similarityToModel
+  } : (surveyView.length > 0 ? surveyView[0] : null);
+
+  const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.id) : null;
   
   const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0) 
     ? primaryMatchDetails 
@@ -110,13 +121,13 @@ function ResultsPage() {
             </tr>
           </thead>
           <tbody>
-            ${allDiseaseResults.slice(0, 4).map((res, idx) => `
+            ${combinedView.slice(0, 4).map((res, idx) => `
               <tr style="background-color: ${idx === 0 ? '#f0f7ff' : '#ffffff'};">
                 <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: ${idx === 0 ? '700' : '400'};">
-                  ${res.disease.replace(/_/g, ' ')}
+                  ${res.label}
                   ${idx === 0 ? `<span style="margin-left: 10px; font-size: 0.75rem; background-color: #dbeafe; color: ${settings.primaryColor}; padding: 2px 8px; border-radius: 4px;">PRIMARY MATCH</span>` : ''}
                 </td>
-                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${settings.primaryColor};">${res.percentage}%</td>
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${settings.primaryColor};">${(res.finalScore * 100).toFixed(1)}%</td>
               </tr>
             `).join('')}
           </tbody>
@@ -309,24 +320,22 @@ function ResultsPage() {
           <div className="conditions-list-container">
             <h2 className="analysis-header">Detected Conditions</h2>
             <div className="conditions-list">
-              {allDiseaseResults.length > 0 ? (
-                allDiseaseResults.map((result, index) => {
-                  const conditionInfo = findConditionDescription(result.disease);
-                  const diseaseName = conditionInfo?.name || 
-                                    result.disease.split('_').map(word => 
-                                      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                                    ).join(' ') ||
-                                    result.disease.replace(/_/g, ' ');
-                  
+              {combinedView.length > 0 ? (
+                combinedView.map((result, index) => {
+                  const conditionInfo = findConditionDescription(result.id);
+                  const diseaseName = conditionInfo?.name || result.label || 'Unknown';
+                  const displayScore = Math.round((result.finalScore || 0) * 100);
+
                   return (
                     <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`}>
                       <div className="condition-name-container">
                         {index === 0 && <span className="top-match-badge">Primary Match</span>}
                         <div className="condition-name-text">{diseaseName}</div>
                       </div>
-                      <div className="progress-circle" style={{'--progress': result.percentage}}>
-                        <span className="progress-value">{result.percentage}%</span>
+                      <div className="progress-circle" style={{ '--progress': displayScore }}>
+                        <span className="progress-value">{displayScore}%</span>
                       </div>
+
                     </div>
                   );
                 })
