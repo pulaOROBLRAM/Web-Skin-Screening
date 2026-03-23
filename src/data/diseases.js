@@ -73,6 +73,37 @@ export const DISEASES = {
       
       totalWeight: 100
     },
+
+    "Ringworm": {
+    prevalence: "very common",
+    demographics: ["children", "adults", "athletes", "pet owners"],
+    
+    attributes: {
+      lesionForm: { value: ["patch", "plaque", "ring-shaped"], weight: 10 },
+      surface: { value: ["scaly", "raised border"], weight: 9 },
+      color: { value: ["red", "pink", "brownish"], weight: 7 },
+      border: { value: ["well-defined", "raised", "annular"], weight: 10 },
+      distribution: { value: ["body", "arms", "legs", "trunk"], weight: 8 },
+      sensation: { value: ["itchy"], weight: 8 },
+      triggers: { value: ["contact with infected person/pet", "damp environments", "poor hygiene"], weight: 8 },
+      associatedFindings: { value: ["central clearing", "active border"], weight: 10 }
+    },
+    
+    locationCategories: {
+      b: { value: ["arms", "legs"], weight: 8 },
+      c: { value: ["trunk", "body"], weight: 9 },
+      d: { value: ["multiple"], weight: 7 }
+    },
+    
+    assessmentMapping: {
+      q1: { value: ["a"], weight: 10 }, // Rash or redness
+      q2: { value: ["a", "d"], weight: 9 }, // Itchy or Both
+      q3: { value: ["a", "b", "c", "d"], weight: 8 }, // All patterns
+      q4: { value: ["b", "c", "d"], weight: 9 } // Arms, legs, trunk, or multiple
+    },
+    
+    totalWeight: 100
+  },
     
     "Dermatitis": {
       prevalence: "very common",
