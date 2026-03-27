@@ -12,9 +12,7 @@ import './css/ResultsPage.css';
 import { CONFIG } from '../config';
 
 // Utility imports
-import { CONDITION_DESCRIPTIONS } from '../data/descriptions';
-import { getTopDiagnoses } from '../utils/diagnosis';
-import { combinePredictions, findConditionDescription } from '../utils/predictionProcessing';
+import { combinePredictions, findConditionDescription, formatModelPrediction } from '../utils/predictionProcessing';
 import { ASSESSMENT } from '../data/selfAssessmentQuestions';
 
 function ResultsPage() {
@@ -22,11 +20,15 @@ function ResultsPage() {
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
   const assessmentAnswersRaw = location.state?.answers || {};
-  const modelPrediction = location.state?.modelPrediction;
+  const rawModelPrediction = location.state?.modelPrediction;
+
+  // Format the raw backend response so the scoring engine can read topPrediction
+  const modelPrediction = formatModelPrediction(rawModelPrediction);
 
   // Report download configuration (kept intact)
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
   const [showReportConfig, setShowReportConfig] = useState(false);
+  const [showDebug, setShowDebug] = useState(false); // Toggle for viewing raw calculation math
 
   const handleToggleSetting = (setting) => {
     setReportSettings(prev => ({
@@ -42,7 +44,6 @@ function ResultsPage() {
     topN: 4
   });
   const combinedView = mlAndClinicalResults.combined || [];
-  const surveyView = hasAnswers ? getTopDiagnoses(assessmentAnswersRaw, 4) : [];
   if (!capturedImage) {
     return (
       <div className="results-container">
@@ -318,7 +319,15 @@ function ResultsPage() {
           
           {/* Left Column: Conditions List */}
           <div className="conditions-list-container">
-            <h2 className="analysis-header">Detected Conditions</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="analysis-header">Detected Conditions</h2>
+              <button 
+                onClick={() => setShowDebug(!showDebug)} 
+                style={{ fontSize: '11px', padding: '4px 8px', background: showDebug ? '#ef4444' : '#e5e7eb', color: showDebug ? 'white' : '#4b5563', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {showDebug ? 'Hide Debug Math' : 'Show Debug Math'}
+              </button>
+            </div>
             <div className="conditions-list">
               {combinedView.length > 0 ? (
                 combinedView.map((result, index) => {
@@ -327,15 +336,31 @@ function ResultsPage() {
                   const displayScore = Math.round((result.finalScore || 0) * 100);
 
                   return (
-                    <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`}>
-                      <div className="condition-name-container">
-                        {index === 0 && <span className="top-match-badge">Primary Match</span>}
-                        <div className="condition-name-text">{diseaseName}</div>
+                    <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`} style={{ flexWrap: 'wrap' }}>
+                      <div className="condition-name-container" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {index === 0 && <span className="top-match-badge">Primary Match</span>}
+                          <div className="condition-name-text">{diseaseName}</div>
+                        </div>
+                        <div className="progress-circle" style={{ '--progress': displayScore }}>
+                          <span className="progress-value">{displayScore}%</span>
+                        </div>
                       </div>
-                      <div className="progress-circle" style={{ '--progress': displayScore }}>
-                        <span className="progress-value">{displayScore}%</span>
-                      </div>
-
+                      
+                      {/* Interactive Math Debugger */}
+                      {showDebug && result.debugMath && (
+                        <div style={{ width: '100%', marginTop: '15px', padding: '10px', backgroundColor: '#f8fafc', borderLeft: '3px solid #3b82f6', fontSize: '12px', fontFamily: 'monospace', color: '#334155' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#1e40af' }}>RAW SCORE ACCUMULATION: {result.debugMath.rawTotal} points</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+                            <span>Assessment (Max 0.20):</span>
+                            <span>{result.debugMath.surveyRaw} pts</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '3px' }}>
+                            <span>AI Visual Similarity (Max 0.80):</span>
+                            <span>{result.debugMath.similarityRaw} pts</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -343,8 +368,6 @@ function ResultsPage() {
                 <div className="no-conditions">Complete the self-assessment to see results.</div>
               )}
             </div>
-
-
 
             {/* Clinical Disclaimer moved here */}
             <div className="recommendation-note">

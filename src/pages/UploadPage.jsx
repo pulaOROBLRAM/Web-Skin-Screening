@@ -115,15 +115,7 @@ function UploadPage() {
       });
     } catch (err) {
       console.error('Model prediction error:', err);
-      setError('Prediction failed. Please try again or use a different image.');
-
-      // If model inference fails, proceed to assessment with unavailable model result
-      navigate('/assessment', {
-        state: {
-          capturedImage: selectedImage,
-          modelPrediction: null
-        }
-      });
+      setError('Connection to AI Model failed. Ensure the Python backend is running on port 5000 and try again.');
     } finally {
       setLoading(false);
     }
