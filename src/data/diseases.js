@@ -143,6 +143,17 @@ export const DISEASES = {
     confidence: 95
   },
 
+  "Genital_Warts": {
+    id: "Genital_Warts",
+    displayName: "Genital Warts (HPV)",
+    category: "GROWTH_OR_LUMP",
+    texture: ["rough"],
+    elevation: ["raised"],
+    ages: ["teen", "adult", "senior"],
+    confidence: 95,
+    warning: "Consult a healthcare provider; potential STI and malignancy risk"
+  },
+
 
   "Seborrheic_Keratosis": {
     id: "Seborrheic_Keratosis",
@@ -202,7 +213,7 @@ export const DISEASES = {
     elevation: ["flat", "raised"],
     ages: ["adult", "senior"],
     confidence: 95,
-    warning: "May require professional evaluation"
+    warning: "Consult a dermatologist immediately to rule out Melanoma"
   },
 
   //BLISTER/SORES BRANCH  
@@ -347,6 +358,80 @@ export const DISEASES = {
     elevation: ["flat", "raised"],
     ages: ["child", "teen", "adult"],
     confidence: 88
+  },
+
+  "Dyschromia": {
+    id: "Dyschromia",
+    displayName: "Dyschromia / Pigmentation Disorder",
+    category: "CHANGE_IN_COLOR_ONLY",
+    texture: ["smooth"],
+    elevation: ["flat"],
+    ages: ["child", "teen", "adult", "senior"],
+    confidence: 80
+  },
+
+  // NEW CLINICAL PATHWAYS ADDED 
+  "Folliculitis": {
+    id: "Folliculitis",
+    displayName: "Folliculitis",
+    category: "RASH_OR_REDNESS",
+    texture: ["smooth", "oozing"],
+    elevation: ["raised"],
+    ages: ["teen", "adult", "senior"],
+    confidence: 90
+  },
+
+  "Lipoma": {
+    id: "Lipoma",
+    displayName: "Lipoma",
+    category: "GROWTH_OR_LUMP",
+    texture: ["smooth"],
+    elevation: ["raised"],
+    ages: ["adult", "senior"],
+    confidence: 95
+  },
+
+  "Keloids": {
+    id: "Keloids",
+    displayName: "Keloids",
+    category: "GROWTH_OR_LUMP",
+    texture: ["smooth", "rough"],
+    elevation: ["raised"],
+    ages: ["teen", "adult", "senior"],
+    confidence: 95
+  },
+
+  "Cellulitis": {
+    id: "Cellulitis",
+    displayName: "Cellulitis",
+    category: "RASH_OR_REDNESS",
+    texture: ["smooth", "oozing"],
+    elevation: ["flat", "raised"],
+    ages: ["infant", "child", "teen", "adult", "senior"],
+    confidence: 95,
+    warning: "Seek medical attention immediately"
+  },
+
+  "Boils": {
+    id: "Boils",
+    displayName: "Boils (Furuncles)",
+    category: "GROWTH_OR_LUMP", // Even though it's pus, clinically it is a localized growth/lump
+    texture: ["smooth", "oozing"],
+    elevation: ["raised"],
+    ages: ["child", "teen", "adult", "senior"],
+    confidence: 95,
+    warning: "Applying warm compresses can help; avoid popping. If severe, see a doctor."
+  },
+
+  "Lupus": {
+    id: "Lupus",
+    displayName: "Lupus (Cutaneous / Systemic)",
+    category: "RASH_OR_REDNESS",
+    texture: ["smooth", "rough"],
+    elevation: ["flat", "raised"],
+    ages: ["teen", "adult", "senior"],
+    confidence: 85,
+    warning: "May require rheumatology or dermatology evaluation"
   }
 };
 

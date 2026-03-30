@@ -13,7 +13,7 @@ import { CONFIG } from '../config';
 
 // Utility imports
 import { combinePredictions, findConditionDescription, formatModelPrediction } from '../utils/predictionProcessing';
-import { ASSESSMENT } from '../data/selfAssessmentQuestions';
+import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 
 function ResultsPage() {
   const navigate = useNavigate();
@@ -65,20 +65,31 @@ function ResultsPage() {
   const toAssessmentAnswerList = (rawAnswers) => {
     if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
-    const questionOrder = ['q1', 'q2', 'q3', 'q4'];
-    const prompts = {
-      q1: 'What best describes what you see?',
-      q2: 'What does it feel like?',
-      q3: 'How is it changing over time?',
-      q4: 'Any associated symptoms?'
+    const findQuestion = (targetId) => {
+      for (const containerKey in ADAPTIVE_QUESTIONS) {
+        const container = ADAPTIVE_QUESTIONS[containerKey];
+        if (container.id === targetId) return container;
+        for (const key in container) {
+          if (typeof container[key] === 'object' && container[key]?.id === targetId) {
+            return container[key];
+          }
+        }
+      }
+      return null;
     };
+
+    const questionOrder = Object.keys(rawAnswers).sort((a, b) => a.localeCompare(b));
 
     return questionOrder
       .filter((qKey) => typeof rawAnswers[qKey] === 'string' && rawAnswers[qKey] !== '')
       .map((qKey) => {
         const choiceKey = rawAnswers[qKey];
-        const answerText = ASSESSMENT?.[qKey]?.[choiceKey] || choiceKey;
-        return { questionId: qKey, question: prompts[qKey] || qKey, answer: answerText };
+        const qBlock = findQuestion(qKey);
+        
+        const questionText = qBlock ? qBlock.text : qKey;
+        const answerText = qBlock?.options?.[choiceKey]?.text || choiceKey;
+
+        return { questionId: qKey, question: questionText, answer: answerText };
       });
   };
 
@@ -91,7 +102,7 @@ function ResultsPage() {
     source: combinedPrimary.source,
     modelConfidence: combinedPrimary.modelMatch,
     similarityToModel: combinedPrimary.similarityToModel
-  } : (surveyView.length > 0 ? surveyView[0] : null);
+  } : (mlAndClinicalResults?.surveyResults?.length > 0 ? mlAndClinicalResults.surveyResults[0] : null);
 
   const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.id) : null;
   

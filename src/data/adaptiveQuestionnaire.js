@@ -11,11 +11,12 @@ export const ADAPTIVE_QUESTIONS = {
       a: { text: "Rash, redness, or scaly patches", nextQuestion: "rash" },
       b: { text: "Growth, lump, or bump", nextQuestion: "growth" },
       c: { text: "Blisters, sores, or ulcers", nextQuestion: "blister" },
-      d: { text: "Change in skin color only (no texture change)", nextQuestion: "color" }
+      d: { text: "Change in skin color only (no texture change)", nextQuestion: "color" },
+      e: { text: "Red, inflamed bumps", nextQuestion: "bumps" }
     }
   },
 
-  // ==================== RASH/REDNESS BRANCH ====================
+  //  RASH/REDNESS BRANCH 
   rash: {
     q2: {
       id: "q2",
@@ -25,8 +26,9 @@ export const ADAPTIVE_QUESTIONS = {
         b: { text: "Greasy, yellowish scales", nextQuestion: "rash_greasy" },
         c: { text: "Dry, rough, or cracked", nextQuestion: "rash_dry" },
         d: { text: "Wet, weeping, or oozing", nextQuestion: "rash_wet" },
-        e: { text: "Inflamed or pus-filled bumps", nextQuestion: "rash_bumps" },
-        f: { text: "Ring-shaped with clear center", nextQuestion: "rash_ring" }
+        f: { text: "Ring-shaped with clear center", nextQuestion: "rash_ring" },
+        g: { text: "Swollen, tender, hot to the touch, rapidly spreading", disease: "Cellulitis" },
+        h: { text: "Butterfly-shaped rash across cheeks and nose", disease: "Lupus" }
       }
     }
   },
@@ -72,51 +74,55 @@ export const ADAPTIVE_QUESTIONS = {
         c: { text: "Irregular shape", nextQuestion: "rash_dry_location" },
         d: { text: "Linear or geometric pattern", disease: "Contact_Dermatitis" }
       }
-    },
-    rash_dry_location: {
-      q4: {
-        id: "q4",
-        text: "Where are these dry, rough patches located?",
-        options: {
-          a: { text: "Elbow creases or behind knees", nextQuestion: "rash_dry_atopic" },
-          b: { text: "Face and neck", nextQuestion: "rash_dry_atopic" },
-          c: { text: "Hands", nextQuestion: "rash_dry_contact" },
-          d: { text: "Widespread", nextQuestion: "rash_dry_general" },
-          e: { text: "Scalp (with dandruff)", disease: "Seborrheic_Dermatitis" }
-        }
+    }
+  },
+
+  rash_dry_location: {
+    q4: {
+      id: "q4",
+      text: "Where are these dry, rough patches located?",
+      options: {
+        a: { text: "Elbow creases or behind knees", nextQuestion: "rash_dry_atopic" },
+        b: { text: "Face and neck", nextQuestion: "rash_dry_atopic" },
+        c: { text: "Hands", nextQuestion: "rash_dry_contact" },
+        d: { text: "Widespread", nextQuestion: "rash_dry_general" },
+        e: { text: "Scalp (with dandruff)", disease: "Seborrheic_Dermatitis" }
       }
-    },
-    rash_dry_atopic: {
-      q5: {
-        id: "q5",
-        text: "Do you have a history of allergies, asthma, or hay fever?",
-        options: {
-          a: { text: "Yes", disease: "Atopic_Dermatitis" },
-          b: { text: "No", disease: "Dermatitis" }
-        }
+    }
+  },
+
+  rash_dry_atopic: {
+    q5: {
+      id: "q5",
+      text: "Do you have a history of allergies, asthma, or hay fever?",
+      options: {
+        a: { text: "Yes", disease: "Atopic_Dermatitis" },
+        b: { text: "No", disease: "Dermatitis" }
       }
-    },
-    rash_dry_contact: {
-      q5: {
-        id: "q5",
-        text: "Did this appear after contact with something new?",
-        options: {
-          a: { text: "Yes, after new soap, detergent, or lotion", disease: "Contact_Dermatitis" },
-          b: { text: "Yes, after new jewelry or metal", disease: "Contact_Dermatitis" },
-          c: { text: "Yes, after poison ivy or plants", disease: "Contact_Dermatitis_Acute" },
-          d: { text: "No, no clear trigger", disease: "Dermatitis" }
-        }
+    }
+  },
+
+  rash_dry_contact: {
+    q5: {
+      id: "q5",
+      text: "Did this appear after contact with something new?",
+      options: {
+        a: { text: "Yes, after new soap, detergent, or lotion", disease: "Contact_Dermatitis" },
+        b: { text: "Yes, after new jewelry or metal", disease: "Contact_Dermatitis" },
+        c: { text: "Yes, after poison ivy or plants", disease: "Contact_Dermatitis_Acute" },
+        d: { text: "No, no clear trigger", disease: "Dermatitis" }
       }
-    },
-    rash_dry_general: {
-      q5: {
-        id: "q5",
-        text: "How long have you had this?",
-        options: {
-          a: { text: "Since childhood", disease: "Atopic_Dermatitis" },
-          b: { text: "Developed recently", disease: "Dermatitis" },
-          c: { text: "Comes and goes with stress", disease: "Dermatitis" }
-        }
+    }
+  },
+
+  rash_dry_general: {
+    q5: {
+      id: "q5",
+      text: "How long have you had this?",
+      options: {
+        a: { text: "Since childhood", disease: "Atopic_Dermatitis" },
+        b: { text: "Developed recently", disease: "Dermatitis" },
+        c: { text: "Comes and goes with stress", disease: "Dermatitis" }
       }
     }
   },
@@ -130,30 +136,33 @@ export const ADAPTIVE_QUESTIONS = {
         a: { text: "Single ring with raised border and clear center", disease: "Ringworm" },
         b: { text: "Multiple rings that may overlap", disease: "Ringworm" },
         c: { text: "Ring shape with scaling on the edge", disease: "Ringworm" },
-        d: { text: "Bullseye pattern (target-like)", nextQuestion: "rash_ring_lyme" }
+        d: { text: "Bullseye pattern (target-like)", nextQuestion: "rash_ring_lyme" },
+        e: { text: "Started as a single large 'herald' patch, then spread across trunk", disease: "Pityriasis_Rosea" }
       }
-    },
-    rash_ring_lyme: {
-      q4: {
-        id: "q4",
-        text: "Have you had a tick bite or been in wooded areas recently?",
-        options: {
-          a: { text: "Yes, and I've had flu-like symptoms", disease: "Lyme_Disease" },
-          b: { text: "Yes, but no other symptoms", nextQuestion: "rash_ring_fungal" },
-          c: { text: "No", disease: "Ringworm" }
-        }
-      },
-      rash_ring_fungal: {
-        q5: {
-          id: "q5",
-          text: "Where is the ring-shaped rash located?",
-          options: {
-            a: { text: "Body, arms, or legs", disease: "Ringworm" },
-            b: { text: "Feet (athlete's foot)", disease: "Ringworm" },
-            c: { text: "Groin area (jock itch)", disease: "Ringworm" },
-            d: { text: "Scalp with hair loss", disease: "Ringworm" }
-          }
-        }
+    }
+  },
+
+  rash_ring_lyme: {
+    q4: {
+      id: "q4",
+      text: "Have you had a tick bite or been in wooded areas recently?",
+      options: {
+        a: { text: "Yes, and I've had flu-like symptoms", disease: "Lyme_Disease" },
+        b: { text: "Yes, but no other symptoms", nextQuestion: "rash_ring_fungal" },
+        c: { text: "No", disease: "Ringworm" }
+      }
+    }
+  },
+
+  rash_ring_fungal: {
+    q5: {
+      id: "q5",
+      text: "Where is the ring-shaped rash located?",
+      options: {
+        a: { text: "Body, arms, or legs", disease: "Ringworm" },
+        b: { text: "Feet (athlete's foot)", disease: "Ringworm" },
+        c: { text: "Groin area (jock itch)", disease: "Ringworm" },
+        d: { text: "Scalp with hair loss", disease: "Ringworm" }
       }
     }
   },
@@ -172,56 +181,68 @@ export const ADAPTIVE_QUESTIONS = {
     }
   },
 
-  // Inflamed bumps
-  rash_bumps: {
+  //  RED BUMPS BRANCH (From Q1) 
+  bumps: {
+    q2: {
+      id: "q2",
+      text: "Do these bumps have any other distinguishing features?",
+      options: {
+        a: { text: "Blackheads or whiteheads present", nextQuestion: "bumps_acne_age" },
+        b: { text: "Located mainly on cheeks/nose with facial flushing", nextQuestion: "bumps_rosacea" },
+        c: { text: "Filled with pus", nextQuestion: "bumps_pus" },
+        d: { text: "Firm and dome-shaped with a central dimple", disease: "Molluscum_Contagiosum" },
+        e: { text: "Covered with small silvery scales", disease: "Psoriasis_Guttate" }
+      }
+    }
+  },
+  bumps_pus: {
     q3: {
       id: "q3",
-      text: "What best describes these bumps?",
+      text: "How would you describe these pus-filled bumps?",
       options: {
-        a: { text: "Small red bumps with blackheads or whiteheads", nextQuestion: "rash_acne_age" },
-        b: { text: "Red bumps on cheeks, nose, chin (no blackheads)", nextQuestion: "rash_rosacea" },
-        c: { text: "Pus-filled bumps on face and chest", nextQuestion: "rash_acne_age" },
-        d: { text: "Firm, red bumps that may have a dimple", disease: "Molluscum_Contagiosum" },
-        e: { text: "Small red bumps with silvery scales", disease: "Psoriasis_Guttate" }
+        a: { text: "Small, like regular pimples on face, chest or back", nextQuestion: "bumps_acne_age" },
+        b: { text: "Tiny red bumps around hair follicles, often after shaving or sweating", disease: "Folliculitis" },
+        c: { text: "Large, deep, highly painful and swollen lump", disease: "Boils" }
       }
-    },
-    rash_acne_age: {
-      q4: {
-        id: "q4",
-        text: "What is your age range?",
-        options: {
-          a: { text: "Under 20", disease: "Acne" },
-          b: { text: "20-30", disease: "Acne" },
-          c: { text: "30-40", nextQuestion: "rash_acne_adult" },
-          d: { text: "Over 40", nextQuestion: "rash_acne_adult" }
-        }
-      },
-      rash_acne_adult: {
-        q5: {
-          id: "q5",
-          text: "Do you have any of these?",
-          options: {
-            a: { text: "Hormonal changes (pregnancy, menopause)", disease: "Acne" },
-            b: { text: "Redness and flushing", disease: "Rosacea" },
-            c: { text: "None of the above", disease: "Acne" }
-          }
-        }
-      }
-    },
-    rash_rosacea: {
-      q4: {
-        id: "q4",
-        text: "Do you experience facial flushing with:",
-        options: {
-          a: { text: "Spicy foods or alcohol", disease: "Rosacea" },
-          b: { text: "Sun exposure", disease: "Rosacea" },
-          c: { text: "No specific triggers", disease: "Rosacea" }
-        }
+    }
+  },
+  bumps_acne_age: {
+    q3: {
+      id: "q3",
+      text: "What is your age range?",
+      options: {
+        a: { text: "Under 20", disease: "Acne" },
+        b: { text: "20-30", disease: "Acne" },
+        c: { text: "30-40", nextQuestion: "bumps_acne_adult" },
+        d: { text: "Over 40", nextQuestion: "bumps_acne_adult" }
       }
     }
   },
 
-  // ==================== GROWTH/LUMP BRANCH ====================
+  bumps_acne_adult: {
+    q4: {
+      id: "q4",
+      text: "Do you have any of these?",
+      options: {
+        a: { text: "Hormonal changes (pregnancy, menopause)", disease: "Acne" },
+        b: { text: "Redness and flushing", disease: "Rosacea" },
+        c: { text: "None of the above", disease: "Acne" }
+      }
+    }
+  },
+  bumps_rosacea: {
+    q3: {
+      id: "q3",
+      text: "Do you experience facial flushing with:",
+      options: {
+        a: { text: "Spicy foods or alcohol", disease: "Rosacea" },
+        b: { text: "Sun exposure", disease: "Rosacea" },
+        c: { text: "No specific triggers", disease: "Rosacea" }
+      }
+    }
+  },
+
+  //  GROWTH/LUMP BRANCH 
   growth: {
     q2: {
       id: "q2",
@@ -233,7 +254,7 @@ export const ADAPTIVE_QUESTIONS = {
         d: { text: "Smooth, round lump under skin", nextQuestion: "growth_cyst" },
         e: { text: "Flat or slightly raised, uniform color", nextQuestion: "growth_mole" },
         f: { text: "Firm, dome-shaped with central dimple", disease: "Molluscum_Contagiosum" },
-        g: { text: "Red, inflamed, or pus-filled bumps (pimples)", nextQuestion: "rash_bumps" }
+        h: { text: "Thick, raised scar from previous injury or surgery", disease: "Keloids" }
       }
     }
   },
@@ -246,7 +267,7 @@ export const ADAPTIVE_QUESTIONS = {
         a: { text: "Hands or feet", disease: "Warts" },
         b: { text: "Face", disease: "Warts" },
         c: { text: "Knees", disease: "Warts" },
-        d: { text: "Genital area", disease: "Warts" }
+        d: { text: "Genital area", disease: "Genital_Warts" }
       }
     }
   },
@@ -259,15 +280,16 @@ export const ADAPTIVE_QUESTIONS = {
         a: { text: "Over 40", disease: "Seborrheic_Keratosis" },
         b: { text: "Under 40", nextQuestion: "growth_keratosis_young" }
       }
-    },
-    growth_keratosis_young: {
-      q4: {
-        id: "q4",
-        text: "Has this growth changed recently?",
-        options: {
-          a: { text: "Yes, it's growing or changing color", disease: "Seborrheic_Keratosis" },
-          b: { text: "No, stable", disease: "Moles" }
-        }
+    }
+  },
+
+  growth_keratosis_young: {
+    q4: {
+      id: "q4",
+      text: "Has this growth changed recently?",
+      options: {
+        a: { text: "Yes, it's growing or changing color", disease: "Suspicious_Mole" },
+        b: { text: "No, stable", disease: "Moles" }
       }
     }
   },
@@ -288,11 +310,11 @@ export const ADAPTIVE_QUESTIONS = {
   growth_cyst: {
     q3: {
       id: "q3",
-      text: "Does it have a small central opening?",
+      text: "How does the lump feel?",
       options: {
-        a: { text: "Yes", disease: "Cysts" },
-        b: { text: "No", disease: "Cysts" },
-        c: { text: "Painful and red", disease: "Cysts_Abscess" }
+        a: { text: "Firm, attached to skin, may have central dark pore", disease: "Cysts" },
+        b: { text: "Soft, doughy, easily moves under fingers", disease: "Lipoma" },
+        c: { text: "Painful, red, and draining pus", disease: "Cysts_Abscess" }
       }
     }
   },
@@ -307,21 +329,22 @@ export const ADAPTIVE_QUESTIONS = {
         c: { text: "Multiple colors or irregular", disease: "Suspicious_Mole" },
         d: { text: "Blue or black", disease: "Suspicious_Mole" }
       }
-    },
-    growth_mole_uniform: {
-      q4: {
-        id: "q4",
-        text: "Is the mole:",
-        options: {
-          a: { text: "Round with smooth edges", disease: "Moles" },
-          b: { text: "Irregular shape or jagged edges", disease: "Suspicious_Mole" },
-          c: { text: "Has it changed recently?", disease: "Suspicious_Mole" }
-        }
+    }
+  },
+
+  growth_mole_uniform: {
+    q4: {
+      id: "q4",
+      text: "Is the mole:",
+      options: {
+        a: { text: "Round with smooth edges", disease: "Moles" },
+        b: { text: "Irregular shape or jagged edges", disease: "Suspicious_Mole" },
+        c: { text: "Has it changed recently?", disease: "Suspicious_Mole" }
       }
     }
   },
 
-  // ==================== BLISTER/SORES BRANCH ====================
+  //  BLISTER/SORES BRANCH 
   blister: {
     q2: {
       id: "q2",
@@ -334,30 +357,32 @@ export const ADAPTIVE_QUESTIONS = {
         e: { text: "Large blisters with clear fluid", nextQuestion: "blister_autoimmune" },
         f: { text: "Single, painful, pus-filled lump or sore", disease: "Cysts_Abscess" }
       }
-    },
-    blister_herpes: {
-      q3: {
-        id: "q3",
-        text: "Do you get these recurrently?",
-        options: {
-          a: { text: "Yes, they come back", disease: "Herpes_Simplex" },
-          b: { text: "No, first time", disease: "Herpes_Simplex" }
-        }
-      }
-    },
-    blister_autoimmune: {
-      q3: {
-        id: "q3",
-        text: "Are there blisters in your mouth?",
-        options: {
-          a: { text: "Yes", disease: "Pemphigus_Vulgaris" },
-          b: { text: "No", disease: "Bullous_Pemphigoid" }
-        }
+    }
+  },
+
+  blister_herpes: {
+    q3: {
+      id: "q3",
+      text: "Do you get these recurrently?",
+      options: {
+        a: { text: "Yes, they come back", disease: "Herpes_Simplex" },
+        b: { text: "No, first time", disease: "Herpes_Simplex" }
       }
     }
   },
 
-  // ==================== COLOR CHANGE BRANCH ====================
+  blister_autoimmune: {
+    q3: {
+      id: "q3",
+      text: "Are there blisters in your mouth?",
+      options: {
+        a: { text: "Yes", disease: "Pemphigus_Vulgaris" },
+        b: { text: "No", disease: "Bullous_Pemphigoid" }
+      }
+    }
+  },
+
+  //  COLOR CHANGE BRANCH 
   color: {
     q2: {
       id: "q2",
@@ -381,15 +406,16 @@ export const ADAPTIVE_QUESTIONS = {
         b: { text: "Poorly defined, on upper chest/back", disease: "Tinea_Versicolor" },
         c: { text: "Present since birth", disease: "Nevus_Depigmentosus" }
       }
-    },
-    color_vitiligo: {
-      q4: {
-        id: "q4",
-        text: "Is there white hair in the patches?",
-        options: {
-          a: { text: "Yes", disease: "Vitiligo" },
-          b: { text: "No", disease: "Vitiligo" }
-        }
+    }
+  },
+
+  color_vitiligo: {
+    q4: {
+      id: "q4",
+      text: "Is there white hair in the patches?",
+      options: {
+        a: { text: "Yes", disease: "Vitiligo" },
+        b: { text: "No", disease: "Vitiligo" }
       }
     }
   },
@@ -404,15 +430,17 @@ export const ADAPTIVE_QUESTIONS = {
         c: { text: "Anywhere, present since birth", disease: "Cafe_au_lait_spots" },
         d: { text: "Scaly, irregular patches", disease: "Seborrheic_Keratosis" }
       }
-    },
-    color_melasma: {
-      q4: {
-        id: "q4",
-        text: "Are you pregnant or taking birth control?",
-        options: {
-          a: { text: "Yes", disease: "Melasma" },
-          b: { text: "No", disease: "Melasma" }
-        }
+    }
+  },
+
+  color_melasma: {
+    q4: {
+      id: "q4",
+      text: "Are you pregnant, taking birth control, or experiencing hormonal changes?",
+      options: {
+        a: { text: "Yes, currently pregnant or on hormones", disease: "Melasma" },
+        b: { text: "No hormonal changes, but worsened by sun exposure", disease: "Melasma" },
+        c: { text: "No obvious triggers", disease: "Dyschromia" }
       }
     }
   },
@@ -448,14 +476,13 @@ export const ADAPTIVE_QUESTIONS = {
       options: {
         a: { text: "Scaly with fine flakes", disease: "Tinea_Versicolor" },
         b: { text: "Smooth and slightly raised", disease: "Granuloma_Annulare" },
-        c: { text: "With a herald patch (single large patch)", disease: "Pityriasis_Rosea" },
-        d: { text: "Ring-shaped with a clearer center", disease: "Ringworm" }
+        c: { text: "With a herald patch (single large patch)", disease: "Pityriasis_Rosea" }
       }
     }
   }
 };
 
-// ==================== ADAPTIVE DIAGNOSIS ENGINE ====================
+//  ADAPTIVE DIAGNOSIS ENGINE 
 // Dynamically resolves disease info from DISEASES — no hardcoded confidence/warning in options
 
 export const diagnoseAdaptive = (answers) => {
