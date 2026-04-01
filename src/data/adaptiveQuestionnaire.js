@@ -1,10 +1,10 @@
 export const ADAPTIVE_QUESTIONS = {
     q1: {
         id: "q1",
-        text: "Looking at your skin, which of these best matches what you see? Pick the closest one.",
+        text: "What best describes your skin condition?",
         options: {
             a: {
-                text: "Flat, smooth area that's a different color than the rest of my skin",
+                text: "Flat spots, white marks, pale areas",
                 nextQuestion: "color_only"
             },
             b: {
@@ -149,10 +149,10 @@ export const ADAPTIVE_QUESTIONS = {
             id: "q2",
             text: "What does the bump feel like when you touch it?",
             options: {
-                a: { text: "Small and pimple-like (size of a pencil eraser or smaller)", nextQuestion: "raised_small" },
+                a: { text: "Small and pimple-like", nextQuestion: "raised_small" },
                 b: { text: "Medium (size of a pea)", nextQuestion: "raised_medium" },
                 c: { text: "Large (bigger than a pea)", nextQuestion: "raised_large" },
-                d: { text: "Has a stalk or stem attaching it to my skin", disease: "Skin_Tags" }
+                d: { text: "Dangles or hangs", disease: "Skin_Tags" }
             }
         }
     },
