@@ -62,6 +62,16 @@ export const DISEASES = {
     confidence: 90
   },
 
+  "Dermatitis": {
+    id: "Dermatitis",
+    displayName: "Dermatitis",
+    category: "RASH_OR_REDNESS",
+    texture: ["rough", "oozing", "crust"],
+    elevation: ["flat", "raised"],
+    ages: ["infant", "child", "teen", "adult", "senior"],
+    confidence: 85
+  },
+
   "Contact_Dermatitis_Acute": {
     id: "Contact_Dermatitis_Acute",
     displayName: "Acute Contact Dermatitis",
@@ -216,6 +226,38 @@ export const DISEASES = {
     warning: "Consult a dermatologist immediately to rule out Melanoma"
   },
 
+  "Actinic_Keratosis": {
+    id: "Actinic_Keratosis",
+    displayName: "Actinic Keratosis",
+    category: "GROWTH_OR_LUMP",
+    texture: ["rough", "crust"],
+    elevation: ["flat", "raised"],
+    ages: ["adult", "senior"],
+    confidence: 85,
+    warning: "Pre-cancerous lesion. Requires dermatological evaluation."
+  },
+
+  "Basal_Cell_Carcinoma": {
+    id: "Basal_Cell_Carcinoma",
+    displayName: "Basal Cell Carcinoma",
+    category: "GROWTH_OR_LUMP",
+    texture: ["smooth", "crust", "oozing"],
+    elevation: ["raised"],
+    ages: ["adult", "senior"],
+    confidence: 85,
+    warning: "Skin cancer. Requires immediate dermatological evaluation."
+  },
+
+  "Dermatofibroma": {
+    id: "Dermatofibroma",
+    displayName: "Dermatofibroma",
+    category: "GROWTH_OR_LUMP",
+    texture: ["smooth", "rough"],
+    elevation: ["raised"],
+    ages: ["adult", "senior"],
+    confidence: 85
+  },
+
   //BLISTER/SORES BRANCH  
   "Herpes_Simplex": {
     id: "Herpes_Simplex",
@@ -368,6 +410,16 @@ export const DISEASES = {
     elevation: ["flat"],
     ages: ["child", "teen", "adult", "senior"],
     confidence: 80
+  },
+
+  "Vascular_Lesions": {
+    id: "Vascular_Lesions",
+    displayName: "Vascular Lesions",
+    category: "CHANGE_IN_COLOR_ONLY",
+    texture: ["smooth"],
+    elevation: ["flat", "raised"],
+    ages: ["child", "teen", "adult", "senior"],
+    confidence: 85
   },
 
   // NEW CLINICAL PATHWAYS ADDED 

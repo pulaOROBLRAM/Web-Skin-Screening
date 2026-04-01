@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage } from '@fortawesome/free-solid-svg-icons';  
+import { faImage } from '@fortawesome/free-solid-svg-icons';
 import {
   FaDownload,
   FaHome,
@@ -85,7 +85,7 @@ function ResultsPage() {
       .map((qKey) => {
         const choiceKey = rawAnswers[qKey];
         const qBlock = findQuestion(qKey);
-        
+
         const questionText = qBlock ? qBlock.text : qKey;
         const answerText = qBlock?.options?.[choiceKey]?.text || choiceKey;
 
@@ -94,7 +94,7 @@ function ResultsPage() {
   };
 
   const assessmentAnswers = toAssessmentAnswerList(assessmentAnswersRaw);
-  
+
   const combinedPrimary = combinedView.length > 0 ? combinedView[0] : null;
   const primaryMatch = combinedPrimary ? {
     id: combinedPrimary.id,
@@ -105,14 +105,14 @@ function ResultsPage() {
   } : (mlAndClinicalResults?.surveyResults?.length > 0 ? mlAndClinicalResults.surveyResults[0] : null);
 
   const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.id) : null;
-  
-  const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0) 
-    ? primaryMatchDetails 
+
+  const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0)
+    ? primaryMatchDetails
     : null;
 
   const handleDownloadReport = () => {
     const settings = reportSettings;
-    
+
     // Modular Section Helpers
     const imageSection = settings.includeImage ? `
       <div class="section">
@@ -164,9 +164,9 @@ function ResultsPage() {
       <div class="section">
         <div class="section-title">Dermatological Analysis Notes</div>
         <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid ${settings.primaryColor}; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
-          ${(displayCondition?.causes && displayCondition.causes.trim()) 
-            ? displayCondition.causes 
-            : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
+          ${(displayCondition?.causes && displayCondition.causes.trim())
+        ? displayCondition.causes
+        : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
         </div>
       </div>` : '';
 
@@ -327,13 +327,13 @@ function ResultsPage() {
 
         {/* Analysis Section (Conditions | Image + Recommendations) */}
         <div className="results-analysis-container">
-          
+
           {/* Left Column: Conditions List */}
           <div className="conditions-list-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="analysis-header">Detected Conditions</h2>
-              <button 
-                onClick={() => setShowDebug(!showDebug)} 
+              <button
+                onClick={() => setShowDebug(!showDebug)}
                 style={{ fontSize: '11px', padding: '4px 8px', background: showDebug ? '#ef4444' : '#e5e7eb', color: showDebug ? 'white' : '#4b5563', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 {showDebug ? 'Hide Debug Math' : 'Show Debug Math'}
@@ -357,7 +357,7 @@ function ResultsPage() {
                           <span className="progress-value">{displayScore}%</span>
                         </div>
                       </div>
-                      
+
                       {/* Interactive Math Debugger */}
                       {showDebug && result.debugMath && (
                         <div style={{ width: '100%', marginTop: '15px', padding: '10px', backgroundColor: '#f8fafc', borderLeft: '3px solid #3b82f6', fontSize: '12px', fontFamily: 'monospace', color: '#334155' }}>
@@ -386,7 +386,7 @@ function ResultsPage() {
             </div>
 
             {/* Book Appointment - sticky with conditions */}
-            <button 
+            <button
               className="book-appointment-btn"
               onClick={() => window.location.href = CONFIG.BOOKING_URL}
             >
@@ -398,23 +398,23 @@ function ResultsPage() {
           <div className="image-recs-stack">
             {/* Top: Image */}
             <div className="analysis-image-container">
-               {capturedImage ? (
-                  <div className="image-wrapper">
-                    <img 
-                      src={capturedImage} 
-                      alt="Analyzed skin condition" 
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.classList.add('image-error');
-                      }} 
-                    />
-                  </div>
-                ) : (
-                  <div className="image-placeholder">
-                    <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
-                    <p>No image available</p>
-                  </div>
-                )}
+              {capturedImage ? (
+                <div className="image-wrapper">
+                  <img
+                    src={capturedImage}
+                    alt="Analyzed skin condition"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('image-error');
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="image-placeholder">
+                  <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
+                  <p>No image available</p>
+                </div>
+              )}
             </div>
 
             {/* Bottom: About the Primary Condition */}
@@ -424,12 +424,12 @@ function ResultsPage() {
                 <p className="condition-description-text">
                   {displayCondition?.description || "Consult a medical professional for a detailed diagnosis and personalized treatment plan."}
                 </p>
-                
+
                 <div className="condition-reference-box">
                   <span className="reference-label">Reference:</span>
-                  <a 
-                    href={`https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}`} 
-                    target="_blank" 
+                  <a
+                    href={`https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="reference-link"
                   >
@@ -480,25 +480,25 @@ function ResultsPage() {
             </div>
             <div className="config-toggles">
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeImage} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeImage}
                   onChange={() => handleToggleSetting('includeImage')}
                 />
                 <span className="toggle-label">Include Image</span>
               </label>
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeRecommendations} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeRecommendations}
                   onChange={() => handleToggleSetting('includeRecommendations')}
                 />
                 <span className="toggle-label">Include Recommendations</span>
               </label>
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeAnalysisNotes} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeAnalysisNotes}
                   onChange={() => handleToggleSetting('includeAnalysisNotes')}
                 />
                 <span className="toggle-label">Include Analysis Notes</span>

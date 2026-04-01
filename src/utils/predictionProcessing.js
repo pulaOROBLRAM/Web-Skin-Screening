@@ -1,10 +1,9 @@
-// src/utils/predictionProcessing.js
 import { CONDITION_DESCRIPTIONS } from '../data/descriptions';
 import { DISEASES } from '../data/diseases';
 import { diagnoseAdaptive } from '../data/adaptiveQuestionnaire';
 import { getTopSimilarDiseases, getSimilarity } from '../models/symptomSimilarityModel';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+//Helpers
 
 export const findConditionDescription = (diseaseName) => {
   if (!diseaseName) {
@@ -30,11 +29,27 @@ export const findConditionDescription = (diseaseName) => {
   };
 };
 
-export const normalizePredictionName = (name) =>
-  name?.replace(/\s+/g, '_').replace(/[.,]/g, '').trim();
+// ML Translation Dictionary
+const ML_CLASS_MAP = {
+  "acne": "Acne",
+  "dermatitis": "Dermatitis",
+  "molluscum contagiosum": "Molluscum_Contagiosum",
+  "ringworm": "Ringworm",
+  "vitiligo": "Vitiligo",
+  "warts": "Warts"
+};
+
+export const normalizePredictionName = (name) => {
+  if (!name) return null;
+  const raw = String(name).toLowerCase().trim();
+  if (ML_CLASS_MAP[raw]) return ML_CLASS_MAP[raw];
+
+  // Fallback for unknown classes
+  return name.replace(/\s+/g, '_').replace(/[.,]/g, '').trim();
+};
 
 export const formatModelPrediction = (predictionResponse) => {
-  if (!predictionResponse || !predictionResponse.success) return null;
+  if (!predictionResponse || (!predictionResponse.success && !predictionResponse.top_prediction)) return null;
   return {
     topPrediction: normalizePredictionName(predictionResponse.top_prediction),
     confidence: Number(predictionResponse.confidence ?? 0),
@@ -67,7 +82,7 @@ export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 
   const similarityCandidates = modelTop ? getTopSimilarDiseases(modelTop, 10) : [];
 
   // Build combined scored map
-  const map = new Map(); // id → entry
+  const map = new Map();
 
   const upsert = (id, patch) => {
     const existing = map.get(id) || {
@@ -122,8 +137,8 @@ export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 
     ...item,
     finalScore: Number(
       (
-        0.20 * (item.surveyMatch || 0) +
-        0.80 * (item.similarityToModel || 0)
+        0.60 * (item.surveyMatch || 0) +
+        0.40 * (item.similarityToModel || 0)
       ).toFixed(4)
     )
   }));
