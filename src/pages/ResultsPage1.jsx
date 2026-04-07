@@ -332,12 +332,12 @@ function ResultsPage() {
           <div className="conditions-list-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="analysis-header">Detected Conditions</h2>
-              {/*<button
+              <button
                 onClick={() => setShowDebug(!showDebug)}
                 style={{ fontSize: '11px', padding: '4px 8px', background: showDebug ? '#ef4444' : '#e5e7eb', color: showDebug ? 'white' : '#4b5563', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 {showDebug ? 'Hide Debug Math' : 'Show Debug Math'}
-              </button>*/}
+              </button>
             </div>
             <div className="conditions-list">
               {combinedView.length > 0 ? (
@@ -367,7 +367,7 @@ function ResultsPage() {
                             <span>{result.debugMath.surveyRaw} pts</span>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '3px' }}>
-                            <span>AI Visual Similarity (Max 0.80):</span>
+                            <span>AI Symptom and Visual Similarity (Max 0.80):</span>
                             <span>{result.debugMath.similarityRaw} pts</span>
                           </div>
                         </div>

@@ -32,8 +32,8 @@ export const ADAPTIVE_QUESTIONS = {
             id: "q2",
             text: "What color is the flat area?",
             options: {
-                a: { text: "White or lighter than my normal skin", nextQuestion: "color_white" },
-                b: { text: "Brown or darker than my normal skin", nextQuestion: "color_brown" },
+                a: { text: "Lighter than my normal skin", nextQuestion: "color_white" },
+                b: { text: "Darker than my normal skin", nextQuestion: "color_brown" },
                 c: { text: "Pink or red", nextQuestion: "color_pink" },
                 d: { text: "Yellowish", nextQuestion: "color_yellow" },
                 e: { text: "Purple or dark red", nextQuestion: "color_purple" }
@@ -80,7 +80,7 @@ export const ADAPTIVE_QUESTIONS = {
             id: "q3",
             text: "Where did the dark spot appear?",
             options: {
-                a: { text: "On my face in a mask-like pattern on cheeks, forehead, or upper lip", nextQuestion: "color_brown_hormonal" },
+                a: { text: "Cheeks, forehead, or upper lip", nextQuestion: "color_brown_hormonal" },
                 b: { text: "Where the sun hits like face, back of hands, or arms", disease: "Lentigo" },
                 c: { text: "Where I had a pimple, cut, or rash before", disease: "Post_Inflammatory_Hyperpigmentation" },
                 d: { text: "I have had it since birth", disease: "Cafe_au_lait_spots" }
@@ -297,7 +297,7 @@ export const ADAPTIVE_QUESTIONS = {
             id: "q2",
             text: "Does the rough area have a clear shape?",
             options: {
-                a: { text: "Yes, it looks like a ring (clear center, raised edge)", nextQuestion: "rough_ring" },
+                a: { text: "Yes, it looks like a ring", nextQuestion: "rough_ring" },
                 b: { text: "Yes, it is a solid round or oval patch", nextQuestion: "rough_patch" },
                 c: { text: "No, it has an irregular or weird shape", nextQuestion: "rough_irregular" }
             }
@@ -310,7 +310,7 @@ export const ADAPTIVE_QUESTIONS = {
             text: "Is the ring red and itchy?",
             options: {
                 a: { text: "Yes", disease: "Ringworm" },
-                b: { text: "No", disease: "Granuloma_Annulare" }
+                b: { text: "No but sometimes", disease: "Granuloma_Annulare" }
             }
         }
     },
@@ -380,7 +380,7 @@ export const ADAPTIVE_QUESTIONS = {
             text: "What do the sores look like?",
             options: {
                 a: { text: "Small blisters filled with clear fluid", nextQuestion: "sores_blisters" },
-                b: { text: "Crusted over with honey-colored or yellow crust", disease: "Impetigo" },
+                b: { text: "Honey-colored or yellow crust", disease: "Impetigo" },
                 c: { text: "Open sore that won't heal", nextQuestion: "sores_nonhealing" },
                 d: { text: "Single painful bump filled with pus", disease: "Boils" }
             }

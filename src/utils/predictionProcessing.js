@@ -137,8 +137,8 @@ export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 
     ...item,
     finalScore: Number(
       (
-        0.60 * (item.surveyMatch || 0) +
-        0.40 * (item.similarityToModel || 0)
+        0.20 * (item.surveyMatch || 0) +
+        0.80 * (item.similarityToModel || 0)
       ).toFixed(4)
     )
   }));
@@ -180,7 +180,7 @@ export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 
 
   const topSlice = scoredArray.slice(0, topN);
 
-  const TEMPERATURE = 0.20;
+  const TEMPERATURE = 0.25; // Adjusted from 0.05 to soften the percentage drop-offs
 
   // Calculate exponentiated scores directly from the raw finalScore
   const expScores = topSlice.map(item => Math.exp((item.finalScore || 0) / TEMPERATURE));
