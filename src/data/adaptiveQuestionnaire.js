@@ -310,7 +310,7 @@ export const ADAPTIVE_QUESTIONS = {
             text: "Is the ring red and itchy?",
             options: {
                 a: { text: "Yes", disease: "Ringworm" },
-                b: { text: "No but sometimes", disease: "Granuloma_Annulare" }
+                b: { text: "No", disease: "Granuloma_Annulare" }
             }
         }
     },

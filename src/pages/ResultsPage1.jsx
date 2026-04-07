@@ -65,32 +65,39 @@ function ResultsPage() {
   const toAssessmentAnswerList = (rawAnswers) => {
     if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
-    const findQuestion = (targetId) => {
-      for (const containerKey in ADAPTIVE_QUESTIONS) {
-        const container = ADAPTIVE_QUESTIONS[containerKey];
-        if (container.id === targetId) return container;
-        for (const key in container) {
-          if (typeof container[key] === 'object' && container[key]?.id === targetId) {
-            return container[key];
-          }
-        }
-      }
-      return null;
-    };
+    const traversedList = [];
+    let nextContainerId = 'q1';
 
-    const questionOrder = Object.keys(rawAnswers).sort((a, b) => a.localeCompare(b));
+    while (nextContainerId) {
+      const container = ADAPTIVE_QUESTIONS[nextContainerId];
+      if (!container) break;
 
-    return questionOrder
-      .filter((qKey) => typeof rawAnswers[qKey] === 'string' && rawAnswers[qKey] !== '')
-      .map((qKey) => {
-        const choiceKey = rawAnswers[qKey];
-        const qBlock = findQuestion(qKey);
+      const questionKeys = Object.keys(container).filter(k => k.startsWith('q'));
+      const question = questionKeys.length > 0 ? container[questionKeys[0]] : container;
 
-        const questionText = qBlock ? qBlock.text : qKey;
-        const answerText = qBlock?.options?.[choiceKey]?.text || choiceKey;
+      if (!question || !question.id) break;
 
-        return { questionId: qKey, question: questionText, answer: answerText };
+      const choiceKey = rawAnswers[question.id];
+      if (!choiceKey || typeof choiceKey !== 'string') break;
+
+      const option = question.options ? question.options[choiceKey] : null;
+      
+      traversedList.push({
+        questionId: question.id,
+        question: question.text || question.id,
+        answer: option?.text || choiceKey
       });
+
+      if (option?.disease) {
+        break; // Match reached
+      } else if (option?.nextQuestion) {
+        nextContainerId = option.nextQuestion;
+      } else {
+        break; // End
+      }
+    }
+
+    return traversedList;
   };
 
   const assessmentAnswers = toAssessmentAnswerList(assessmentAnswersRaw);
