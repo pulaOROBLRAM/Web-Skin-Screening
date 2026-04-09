@@ -131,7 +131,6 @@ function UploadPage() {
       } finally {
         setLoading(false);
       }
-    }
   };
 
   const handleReset = () => {
