@@ -7,7 +7,7 @@ function SelfAssessment() {
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
-  const modelPrediction = location.state?.modelPrediction || null;
+  const modelPrediction = location.state?.modelPrediction || location.state?.predictions || null;
 
   // Adaptive questionnaire state
   const [currentQuestion, setCurrentQuestion] = useState(ADAPTIVE_QUESTIONS.q1);
