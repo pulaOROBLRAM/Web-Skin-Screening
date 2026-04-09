@@ -1,31 +1,20 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ASSESSMENT } from '../data/selfAssessmentQuestions';
+import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 import './css/SelfAssessment.css';
 
 function SelfAssessment() {
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
+  const modelPrediction = location.state?.modelPrediction || null;
 
-  // Static 4-step intake. The answer keys (`a`..`d`) map to `src/data/diseases.js` scoring rules.
-  const steps = useMemo(
-    () => ([
-      { key: 'q1', title: 'Question 1', prompt: 'What best describes what you see?' },
-      { key: 'q2', title: 'Question 2', prompt: 'What does it feel like?' },
-      { key: 'q3', title: 'Question 3', prompt: 'How is it changing over time?' },
-      { key: 'q4', title: 'Question 4', prompt: 'Any associated symptoms?' }
-    ]),
-    []
-  );
-
-  const [stepIdx, setStepIdx] = useState(0);
+  // Adaptive questionnaire state
+  const [currentQuestion, setCurrentQuestion] = useState(ADAPTIVE_QUESTIONS.q1);
   const [answers, setAnswers] = useState({});
-
-  const step = steps[stepIdx];
-  const optionsObj = ASSESSMENT?.[step.key] || {};
-  const options = Object.entries(optionsObj);
-  const selected = answers[step.key];
+  const [questionHistory, setQuestionHistory] = useState(['q1']);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState(null);
 
   if (!capturedImage) {
     return (
@@ -41,77 +30,142 @@ function SelfAssessment() {
     );
   }
 
-  // Answer selection
+  // Handle answer selection
   const handleSelect = (choiceKey) => {
-    setAnswers(prev => ({ ...prev, [step.key]: choiceKey }));
+    const newAnswers = { ...answers, [currentQuestion.id]: choiceKey };
+    setAnswers(newAnswers);
+
+    const option = currentQuestion.options[choiceKey];
+    if (option) {
+      // If this leads to a disease, we're done
+      if (option.disease) {
+        handleComplete(newAnswers);
+        return;
+      }
+
+      // If there's a next question, navigate to it
+      if (option.nextQuestion) {
+        const nextContainer = ADAPTIVE_QUESTIONS[option.nextQuestion];
+        if (nextContainer) {
+          // Find the question object within the container
+          const questionKeys = Object.keys(nextContainer).filter(key => key.startsWith('q'));
+          const nextQuestion = questionKeys.length > 0 ? nextContainer[questionKeys[0]] : nextContainer;
+          
+          if (nextQuestion && nextQuestion.id) {
+            setCurrentQuestion(nextQuestion);
+            setQuestionHistory([...questionHistory, nextQuestion.id]);
+          } else {
+            // No valid next question, complete assessment
+            handleComplete(newAnswers);
+          }
+        } else {
+          // No more questions, complete assessment
+          handleComplete(newAnswers);
+        }
+      } else {
+        // No next question, complete assessment
+        handleComplete(newAnswers);
+      }
+    }
   };
 
-  // Step navigation
-  const handleNext = () => {
-    if (stepIdx < steps.length - 1) setStepIdx(stepIdx + 1);
-  };
-
+  // Handle going back to previous question
   const handlePrev = () => {
-    if (stepIdx > 0) setStepIdx(stepIdx - 1);
+    if (questionHistory.length > 1) {
+      const newHistory = [...questionHistory];
+      newHistory.pop(); // Remove current
+      const prevQuestionId = newHistory[newHistory.length - 1];
+      
+      // Find the previous question by traversing the structure
+      const prevQuestion = findQuestionById(prevQuestionId);
+
+      if (prevQuestion) {
+        setCurrentQuestion(prevQuestion);
+        setQuestionHistory(newHistory);
+
+        // Remove the answer for the current question we're going back from
+        const newAnswers = { ...answers };
+        delete newAnswers[currentQuestion.id];
+        setAnswers(newAnswers);
+      }
+    }
   };
 
-  // Persist + go to results (results page will compute diagnosis from these answers)
-  const handleComplete = () => {
-    localStorage.setItem('assessmentAnswers', JSON.stringify(answers));
+  // Helper to find question by ID in the adaptive structure
+  const findQuestionById = (targetId) => {
+    // Search through all containers in ADAPTIVE_QUESTIONS
+    for (const containerKey in ADAPTIVE_QUESTIONS) {
+      const container = ADAPTIVE_QUESTIONS[containerKey];
+      
+      // Check if container is a direct question
+      if (container.id === targetId) {
+        return container;
+      }
+      
+      // Check nested questions
+      for (const key in container) {
+        if (typeof container[key] === 'object' && container[key] && container[key].id === targetId) {
+          return container[key];
+        }
+      }
+    }
+    return null;
+  };
+
+  // Complete assessment and navigate to results
+  const handleComplete = (finalAnswers) => {
+    setIsAnalyzing(true);
+    setError(null);
+
+    // Save answers for local persistence + review
+    localStorage.setItem('assessmentAnswers', JSON.stringify(finalAnswers));
+    localStorage.setItem('lastCapturedImage', capturedImage || '');
+    localStorage.setItem('lastModelPrediction', JSON.stringify(modelPrediction));
+
     navigate('/results', {
       state: {
         capturedImage,
-        answers
+        answers: finalAnswers,
+        modelPrediction
       }
     });
+
+    setIsAnalyzing(false);
   };
 
-  const isLast = stepIdx === steps.length - 1;
+  const options = Object.entries(currentQuestion.options || {});
+  const selected = answers[currentQuestion.id];
+  const canGoBack = questionHistory.length > 1;
 
   return (
     <div className="assessment-container">
       <div className="assessment-card">
         <h1 className="assessment-title">Self-Assessment</h1>
-        <p className="assessment-note">{step.title}</p>
+        <p className="assessment-note">Question {questionHistory.length}</p>
+        {error && <div className="assessment-error">{error}</div>}
+        {isAnalyzing && <div className="assessment-loading">Analyzing image via ML model... please wait.</div>}
 
-        <h3 className="question-text">{step.prompt}</h3>
+        <h3 className="question-text">{currentQuestion.text}</h3>
 
         <div className="options-grid">
-          {options.map(([k, label]) => (
+          {options.map(([k, option]) => (
             <button
               key={k}
               className={`option-button ${selected === k ? 'selected' : ''}`}
               onClick={() => handleSelect(k)}
             >
-              {label}
+              {option.text}
             </button>
           ))}
         </div>
 
         <div className="navigation-buttons">
-          {stepIdx > 0 ? (
+          {canGoBack ? (
             <button className="nav-button prev-button" onClick={handlePrev}>
               Previous
             </button>
           ) : <div />}
-
-          {!isLast ? (
-            <button
-              className="nav-button next-button"
-              onClick={handleNext}
-              disabled={!selected}
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              className="nav-button complete-button"
-              onClick={handleComplete}
-              disabled={!selected}
-            >
-              Continue to Results
-            </button>
-          )}
+          <div />
         </div>
       </div>
     </div>

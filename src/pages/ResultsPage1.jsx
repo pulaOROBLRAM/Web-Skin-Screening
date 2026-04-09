@@ -12,21 +12,23 @@ import './css/ResultsPage.css';
 import { CONFIG } from '../config';
 
 // Utility imports
-import {
-  findConditionDescription
-} from '../utils/predictionProcessing';
-import { diagnose } from '../utils/diagnosis';
-import { ASSESSMENT } from '../data/selfAssessmentQuestions';
+import { combinePredictions, findConditionDescription, formatModelPrediction } from '../utils/predictionProcessing';
+import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 
 function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const capturedImage = location.state?.capturedImage;
-  const assessmentAnswersRaw = location.state?.answers;
+  const assessmentAnswersRaw = location.state?.answers || {};
+  const rawModelPrediction = location.state?.modelPrediction;
+
+  // Format the raw backend response so the scoring engine can read topPrediction
+  const modelPrediction = formatModelPrediction(rawModelPrediction);
 
   // Report download configuration (kept intact)
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
   const [showReportConfig, setShowReportConfig] = useState(false);
+  const [showDebug, setShowDebug] = useState(false); // Toggle for viewing raw calculation math
 
   const handleToggleSetting = (setting) => {
     setReportSettings(prev => ({
@@ -36,7 +38,12 @@ function ResultsPage() {
   };
 
   const hasAnswers = Boolean(assessmentAnswersRaw && Object.keys(assessmentAnswersRaw).length > 0);
-
+  const mlAndClinicalResults = combinePredictions({
+    modelPrediction,
+    assessmentAnswers: assessmentAnswersRaw || {},
+    topN: 4
+  });
+  const combinedView = mlAndClinicalResults.combined || [];
   if (!capturedImage) {
     return (
       <div className="results-container">
@@ -54,42 +61,65 @@ function ResultsPage() {
     );
   }
 
-  // Diagnosis results are driven purely by the self-assessment.
-  const allDiseaseResults = hasAnswers ? diagnose({ answers: assessmentAnswersRaw, topN: 4 }) : [];
-
+  // Diagnosis results are driven primarily by combined ML+similarity scores
   const toAssessmentAnswerList = (rawAnswers) => {
     if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
-    const questionOrder = ['q1', 'q2', 'q3', 'q4'];
-    const prompts = {
-      q1: 'What best describes what you see?',
-      q2: 'What does it feel like?',
-      q3: 'How is it changing over time?',
-      q4: 'Any associated symptoms?'
-    };
+    const traversedList = [];
+    let nextContainerId = 'q1';
 
-    return questionOrder
-      .filter((qKey) => typeof rawAnswers[qKey] === 'string' && rawAnswers[qKey] !== '')
-      .map((qKey) => {
-        const choiceKey = rawAnswers[qKey];
-        const answerText = ASSESSMENT?.[qKey]?.[choiceKey] || choiceKey;
-        return { questionId: qKey, question: prompts[qKey] || qKey, answer: answerText };
+    while (nextContainerId) {
+      const container = ADAPTIVE_QUESTIONS[nextContainerId];
+      if (!container) break;
+
+      const questionKeys = Object.keys(container).filter(k => k.startsWith('q'));
+      const question = questionKeys.length > 0 ? container[questionKeys[0]] : container;
+
+      if (!question || !question.id) break;
+
+      const choiceKey = rawAnswers[question.id];
+      if (!choiceKey || typeof choiceKey !== 'string') break;
+
+      const option = question.options ? question.options[choiceKey] : null;
+      
+      traversedList.push({
+        questionId: question.id,
+        question: question.text || question.id,
+        answer: option?.text || choiceKey
       });
+
+      if (option?.disease) {
+        break; // Match reached
+      } else if (option?.nextQuestion) {
+        nextContainerId = option.nextQuestion;
+      } else {
+        break; // End
+      }
+    }
+
+    return traversedList;
   };
 
   const assessmentAnswers = toAssessmentAnswerList(assessmentAnswersRaw);
-  
-  // Primary match details (pulled from local condition descriptions)
-  const primaryMatch = allDiseaseResults.length > 0 ? allDiseaseResults[0] : null;
-  const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.disease) : null;
-  
-  const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0) 
-    ? primaryMatchDetails 
+
+  const combinedPrimary = combinedView.length > 0 ? combinedView[0] : null;
+  const primaryMatch = combinedPrimary ? {
+    id: combinedPrimary.id,
+    matchPercentage: combinedPrimary.finalScore * 100,
+    source: combinedPrimary.source,
+    modelConfidence: combinedPrimary.modelMatch,
+    similarityToModel: combinedPrimary.similarityToModel
+  } : (mlAndClinicalResults?.surveyResults?.length > 0 ? mlAndClinicalResults.surveyResults[0] : null);
+
+  const primaryMatchDetails = primaryMatch ? findConditionDescription(primaryMatch.id) : null;
+
+  const displayCondition = (primaryMatchDetails && Object.keys(primaryMatchDetails).length > 0)
+    ? primaryMatchDetails
     : null;
 
   const handleDownloadReport = () => {
     const settings = reportSettings;
-    
+
     // Modular Section Helpers
     const imageSection = settings.includeImage ? `
       <div class="section">
@@ -110,13 +140,13 @@ function ResultsPage() {
             </tr>
           </thead>
           <tbody>
-            ${allDiseaseResults.slice(0, 4).map((res, idx) => `
+            ${combinedView.slice(0, 4).map((res, idx) => `
               <tr style="background-color: ${idx === 0 ? '#f0f7ff' : '#ffffff'};">
                 <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; font-weight: ${idx === 0 ? '700' : '400'};">
-                  ${res.disease.replace(/_/g, ' ')}
+                  ${res.label}
                   ${idx === 0 ? `<span style="margin-left: 10px; font-size: 0.75rem; background-color: #dbeafe; color: ${settings.primaryColor}; padding: 2px 8px; border-radius: 4px;">PRIMARY MATCH</span>` : ''}
                 </td>
-                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${settings.primaryColor};">${res.percentage}%</td>
+                <td style="padding: 12px 15px; border-top: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${settings.primaryColor};">${(res.finalScore * 100).toFixed(1)}%</td>
               </tr>
             `).join('')}
           </tbody>
@@ -141,9 +171,9 @@ function ResultsPage() {
       <div class="section">
         <div class="section-title">Dermatological Analysis Notes</div>
         <div style="background-color: #f8fafc; padding: 15px; border-left: 4px solid ${settings.primaryColor}; border-radius: 4px; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">
-          ${(displayCondition?.causes && displayCondition.causes.trim()) 
-            ? displayCondition.causes 
-            : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
+          ${(displayCondition?.causes && displayCondition.causes.trim())
+        ? displayCondition.causes
+        : "A visual examination by a qualified medical professional is recommended. This condition requires clinical assessment to determine the appropriate treatment path. Please avoid applying non-prescribed topical treatments until a consultation is complete."}
         </div>
       </div>` : '';
 
@@ -304,29 +334,51 @@ function ResultsPage() {
 
         {/* Analysis Section (Conditions | Image + Recommendations) */}
         <div className="results-analysis-container">
-          
+
           {/* Left Column: Conditions List */}
           <div className="conditions-list-container">
-            <h2 className="analysis-header">Detected Conditions</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 className="analysis-header">Detected Conditions</h2>
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                style={{ fontSize: '11px', padding: '4px 8px', background: showDebug ? '#ef4444' : '#e5e7eb', color: showDebug ? 'white' : '#4b5563', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {showDebug ? 'Hide Debug Math' : 'Show Debug Math'}
+              </button>
+            </div>
             <div className="conditions-list">
-              {allDiseaseResults.length > 0 ? (
-                allDiseaseResults.map((result, index) => {
-                  const conditionInfo = findConditionDescription(result.disease);
-                  const diseaseName = conditionInfo?.name || 
-                                    result.disease.split('_').map(word => 
-                                      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                                    ).join(' ') ||
-                                    result.disease.replace(/_/g, ' ');
-                  
+              {combinedView.length > 0 ? (
+                combinedView.map((result, index) => {
+                  const conditionInfo = findConditionDescription(result.id);
+                  const diseaseName = conditionInfo?.name || result.label || 'Unknown';
+                  const displayScore = Math.round((result.finalScore || 0) * 100);
+
                   return (
-                    <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`}>
-                      <div className="condition-name-container">
-                        {index === 0 && <span className="top-match-badge">Primary Match</span>}
-                        <div className="condition-name-text">{diseaseName}</div>
+                    <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`} style={{ flexWrap: 'wrap' }}>
+                      <div className="condition-name-container" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {index === 0 && <span className="top-match-badge">Primary Match</span>}
+                          <div className="condition-name-text">{diseaseName}</div>
+                        </div>
+                        <div className="progress-circle" style={{ '--progress': displayScore }}>
+                          <span className="progress-value">{displayScore}%</span>
+                        </div>
                       </div>
-                      <div className="progress-circle" style={{'--progress': result.percentage}}>
-                        <span className="progress-value">{result.percentage}%</span>
-                      </div>
+
+                      {/* Interactive Math Debugger */}
+                      {showDebug && result.debugMath && (
+                        <div style={{ width: '100%', marginTop: '15px', padding: '10px', backgroundColor: '#f8fafc', borderLeft: '3px solid #3b82f6', fontSize: '12px', fontFamily: 'monospace', color: '#334155' }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#1e40af' }}>RAW SCORE ACCUMULATION: {result.debugMath.rawTotal} points</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '3px' }}>
+                            <span>Assessment (Max 0.20):</span>
+                            <span>{result.debugMath.surveyRaw} pts</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '3px' }}>
+                            <span>AI Symptom and Visual Similarity (Max 0.80):</span>
+                            <span>{result.debugMath.similarityRaw} pts</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -335,15 +387,13 @@ function ResultsPage() {
               )}
             </div>
 
-
-
             {/* Clinical Disclaimer moved here */}
             <div className="recommendation-note">
               <p><strong>Clinical Note:</strong> Please contact a dermatologist for a professional diagnosis</p>
             </div>
 
             {/* Book Appointment - sticky with conditions */}
-            <button 
+            <button
               className="book-appointment-btn"
               onClick={() => window.location.href = CONFIG.BOOKING_URL}
             >
@@ -355,23 +405,23 @@ function ResultsPage() {
           <div className="image-recs-stack">
             {/* Top: Image */}
             <div className="analysis-image-container">
-               {capturedImage ? (
-                  <div className="image-wrapper">
-                    <img 
-                      src={capturedImage} 
-                      alt="Analyzed skin condition" 
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.classList.add('image-error');
-                      }} 
-                    />
-                  </div>
-                ) : (
-                  <div className="image-placeholder">
-                    <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
-                    <p>No image available</p>
-                  </div>
-                )}
+              {capturedImage ? (
+                <div className="image-wrapper">
+                  <img
+                    src={capturedImage}
+                    alt="Analyzed skin condition"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.classList.add('image-error');
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="image-placeholder">
+                  <FontAwesomeIcon icon={faImage} className="placeholder-icon" />
+                  <p>No image available</p>
+                </div>
+              )}
             </div>
 
             {/* Bottom: About the Primary Condition */}
@@ -381,12 +431,12 @@ function ResultsPage() {
                 <p className="condition-description-text">
                   {displayCondition?.description || "Consult a medical professional for a detailed diagnosis and personalized treatment plan."}
                 </p>
-                
+
                 <div className="condition-reference-box">
                   <span className="reference-label">Reference:</span>
-                  <a 
-                    href={`https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}`} 
-                    target="_blank" 
+                  <a
+                    href={`https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(displayCondition?.name || 'skin condition')}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="reference-link"
                   >
@@ -437,25 +487,25 @@ function ResultsPage() {
             </div>
             <div className="config-toggles">
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeImage} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeImage}
                   onChange={() => handleToggleSetting('includeImage')}
                 />
                 <span className="toggle-label">Include Image</span>
               </label>
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeRecommendations} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeRecommendations}
                   onChange={() => handleToggleSetting('includeRecommendations')}
                 />
                 <span className="toggle-label">Include Recommendations</span>
               </label>
               <label className="toggle-item">
-                <input 
-                  type="checkbox" 
-                  checked={reportSettings.includeAnalysisNotes} 
+                <input
+                  type="checkbox"
+                  checked={reportSettings.includeAnalysisNotes}
                   onChange={() => handleToggleSetting('includeAnalysisNotes')}
                 />
                 <span className="toggle-label">Include Analysis Notes</span>

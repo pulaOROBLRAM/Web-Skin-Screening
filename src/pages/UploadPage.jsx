@@ -84,9 +84,13 @@ function UploadPage() {
   };
 
   const handleProceed = async () => {
-    if (selectedImage) {
-      setLoading(true);
-      setError(null);
+    if (!selectedImage) {
+      setError('No image selected. Please upload an image first.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
       try {
         const imageFile = dataURLtoFile(selectedImage, 'image.jpg');
@@ -127,7 +131,6 @@ function UploadPage() {
       } finally {
         setLoading(false);
       }
-    }
   };
 
   const handleReset = () => {
