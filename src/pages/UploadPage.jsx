@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloudUpload, faCamera, faArrowRight, faUndo, faSpinner, faHome, faImage } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 import './css/UploadPage.css';
 
 function UploadPage() {
@@ -88,15 +89,41 @@ function UploadPage() {
       setError(null);
 
       try {
-        // Model inference is disabled; proceed directly to self-assessment.
+        const imageFile = dataURLtoFile(selectedImage, 'image.jpg');
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const response = await axios.post('http://localhost:5000/predict', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        // Check if backend flagged the image as non-skin
+        if (response.data.success === false && response.data.error === 'non_skin_image') {
+          setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
+          return;
+        }
+
         navigate('/assessment', {
           state: {
-            capturedImage: selectedImage
+            capturedImage: selectedImage,
+            predictions: response.data
           }
         });
       } catch (err) {
         console.error('Error details:', err);
-        setError('Error proceeding. Please try again.');
+        let errorMessage = 'Error analyzing image. Please try again.';
+
+        if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+          errorMessage = 'Cannot connect to the server. Please make sure the backend server is running on port 5000.';
+        } else if (err.response) {
+          errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
+        } else if (err.request) {
+          errorMessage = 'No response from server. Please check if the backend is running.';
+        }
+
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
