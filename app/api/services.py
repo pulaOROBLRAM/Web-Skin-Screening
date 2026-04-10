@@ -8,6 +8,7 @@ except Exception:
 import logging
 import os
 import threading
+from pathlib import Path
 from app.api.model_loader import load_model, resolve_signature_input_key
 from app.api.image_processor import preprocess_image, validate_image
 from app.api.class_loader import load_class_names
@@ -129,9 +130,21 @@ class PredictionService:
                  labels_txt_path='saved_model/third/labels.txt',
                  preprocess_mode: str = 'efficientnet'):
         self.logger = logging.getLogger(__name__)
-        self._model_wrapper = ModelWrapper(model_path)
+        root_dir = Path(__file__).resolve().parents[2]  # repo root (../.. from app/api)
+
+        def _abs(p: str) -> str:
+            if not p:
+                return p
+            pp = Path(p)
+            return str(pp if pp.is_absolute() else (root_dir / pp))
+
+        model_path_abs = _abs(model_path)
+        class_indices_abs = _abs(class_indices_path)
+        labels_txt_abs = _abs(labels_txt_path)
+
+        self._model_wrapper = ModelWrapper(model_path_abs)
         self._output_processor = OutputProcessor()
-        self.class_names = self._load_class_names(class_indices_path, labels_txt_path)
+        self.class_names = self._load_class_names(class_indices_abs, labels_txt_abs)
         self.preprocess_mode = preprocess_mode
 
       
@@ -178,6 +191,15 @@ class PredictionService:
             processed_img = self.preprocess_image(image_data)
 
             # Step 3: Infer
+            if not self._model_wrapper.is_available():
+                return {
+                    "success": False,
+                    "error": "model_unavailable",
+                    "message": (
+                        "Model is not available in this environment. "
+                        "Ensure TensorFlow is installed and the model files exist at the configured path."
+                    ),
+                }
             raw_output = self._model_wrapper.predict(processed_img)
             
             # Step 4: Extract probabilities
