@@ -12,7 +12,7 @@ function SelfAssessment() {
   // Adaptive questionnaire state
   const [currentQuestion, setCurrentQuestion] = useState(ADAPTIVE_QUESTIONS.q1);
   const [answers, setAnswers] = useState({});
-  const [questionHistory, setQuestionHistory] = useState(['q1']);
+  const [questionHistory, setQuestionHistory] = useState([ADAPTIVE_QUESTIONS.q1]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -53,7 +53,7 @@ function SelfAssessment() {
           
           if (nextQuestion && nextQuestion.id) {
             setCurrentQuestion(nextQuestion);
-            setQuestionHistory([...questionHistory, nextQuestion.id]);
+            setQuestionHistory([...questionHistory, nextQuestion]);
           } else {
             // No valid next question, complete assessment
             handleComplete(newAnswers);
@@ -74,11 +74,8 @@ function SelfAssessment() {
     if (questionHistory.length > 1) {
       const newHistory = [...questionHistory];
       newHistory.pop(); // Remove current
-      const prevQuestionId = newHistory[newHistory.length - 1];
+      const prevQuestion = newHistory[newHistory.length - 1];
       
-      // Find the previous question by traversing the structure
-      const prevQuestion = findQuestionById(prevQuestionId);
-
       if (prevQuestion) {
         setCurrentQuestion(prevQuestion);
         setQuestionHistory(newHistory);
@@ -89,27 +86,6 @@ function SelfAssessment() {
         setAnswers(newAnswers);
       }
     }
-  };
-
-  // Helper to find question by ID in the adaptive structure
-  const findQuestionById = (targetId) => {
-    // Search through all containers in ADAPTIVE_QUESTIONS
-    for (const containerKey in ADAPTIVE_QUESTIONS) {
-      const container = ADAPTIVE_QUESTIONS[containerKey];
-      
-      // Check if container is a direct question
-      if (container.id === targetId) {
-        return container;
-      }
-      
-      // Check nested questions
-      for (const key in container) {
-        if (typeof container[key] === 'object' && container[key] && container[key].id === targetId) {
-          return container[key];
-        }
-      }
-    }
-    return null;
   };
 
   // Complete assessment and navigate to results
