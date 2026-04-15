@@ -194,7 +194,9 @@ export const combinePredictions = ({ modelPrediction, assessmentAnswers, topN = 
     debugMath: {
       rawTotal: (item.finalScore || 0).toFixed(3),
       surveyRaw: (0.20 * (item.surveyMatch || 0)).toFixed(3),
-      similarityRaw: (0.80 * (item.similarityToModel || 0)).toFixed(3)
+      similarityRaw: (0.80 * (item.similarityToModel || 0)).toFixed(3),
+      modelTopName: modelPrediction?.topPrediction || 'N/A',
+      modelTopConf: (modelPrediction?.confidence || 0).toFixed(3)
     }
   }));
 
