@@ -7,4 +7,4 @@ class PredictionResponse(BaseModel):
     top_prediction: Optional[str] = None
     confidence: Optional[float] = None
     error: Optional[str] = None
-    message: Optional[str] = None 
+    message: Optional[str] = None

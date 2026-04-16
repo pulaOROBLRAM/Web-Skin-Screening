@@ -218,6 +218,84 @@
   background: var(--bg-light);
 }
 
+.assessment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2500;
+}
+
+.assessment-modal {
+  width: 100%;
+  max-width: 560px;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+
+.assessment-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-light);
+  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.06) 0%, transparent 60%),
+    var(--bg-white);
+}
+
+.assessment-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--primary-blue);
+  letter-spacing: -0.02em;
+}
+
+.assessment-modal-close {
+  appearance: none;
+  border: 1px solid var(--border-mod);
+  background: white;
+  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.assessment-modal-close:hover {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  transform: translateY(-1px);
+}
+
+.assessment-modal-message {
+  margin: 0;
+  padding: 18px 20px 0;
+  color: var(--text-gray);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.assessment-modal-actions {
+  padding: 18px 20px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .complete-button,
 .next-button {
   background: var(--primary-blue) !important;
