@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 import './css/SelfAssessment.css';
@@ -12,9 +12,13 @@ function SelfAssessment() {
   // Adaptive questionnaire state
   const [currentQuestion, setCurrentQuestion] = useState(ADAPTIVE_QUESTIONS.q1);
   const [answers, setAnswers] = useState({});
-  const [questionHistory, setQuestionHistory] = useState(['q1']);
+  const [questionHistory, setQuestionHistory] = useState([ADAPTIVE_QUESTIONS.q1]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState(null);
+  const [warningModalMessage, setWarningModalMessage] = useState(null);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const assessmentStartMsRef = useRef(Date.now());
+  const questionStartMsRef = useRef(Date.now());
+  const consecutiveFastAnswersRef = useRef(0);
 
   if (!capturedImage) {
     return (
@@ -30,8 +34,56 @@ function SelfAssessment() {
     );
   }
 
+  const resetAssessment = () => {
+    setIsAnalyzing(false);
+    setAnswers({});
+    setCurrentQuestion(ADAPTIVE_QUESTIONS.q1);
+    setQuestionHistory([ADAPTIVE_QUESTIONS.q1]);
+    assessmentStartMsRef.current = Date.now();
+    questionStartMsRef.current = Date.now();
+    consecutiveFastAnswersRef.current = 0;
+
+    try {
+      localStorage.removeItem('assessmentAnswers');
+      localStorage.removeItem('lastCapturedImage');
+      localStorage.removeItem('lastModelPrediction');
+    } catch {
+      // ignore storage failures (e.g., privacy mode)
+    }
+  };
+
+  const resetAssessmentWithWarning = (message) => {
+    resetAssessment();
+    setWarningModalMessage(message);
+    setIsWarningModalOpen(true);
+  };
+
+  // Guardrail: if someone is clicking through too quickly, treat as random input
+  const isSuspiciouslyFast = (elapsedMs, nextFastCount) => {
+    // Heuristics tuned for UX: allow quick users, block obvious random clicking.
+    const MIN_MS_PER_QUESTION = 500;
+    const CONSECUTIVE_FAST_LIMIT = 3;
+
+    if (elapsedMs >= MIN_MS_PER_QUESTION) return false;
+    return nextFastCount >= CONSECUTIVE_FAST_LIMIT;
+  };
+
   // Handle answer selection
   const handleSelect = (choiceKey) => {
+    if (isWarningModalOpen || isAnalyzing) return;
+
+    const now = Date.now();
+    const elapsed = now - questionStartMsRef.current;
+    const nextFastCount = elapsed < 500 ? consecutiveFastAnswersRef.current + 1 : 0;
+
+    if (isSuspiciouslyFast(elapsed, nextFastCount)) {
+      resetAssessmentWithWarning(
+        "We detected random/too-fast responses. For accuracy, the self‑assessment has been restarted. Please answer carefully."
+      );
+      return;
+    }
+
+    consecutiveFastAnswersRef.current = nextFastCount;
     const newAnswers = { ...answers, [currentQuestion.id]: choiceKey };
     setAnswers(newAnswers);
 
@@ -53,7 +105,8 @@ function SelfAssessment() {
           
           if (nextQuestion && nextQuestion.id) {
             setCurrentQuestion(nextQuestion);
-            setQuestionHistory([...questionHistory, nextQuestion.id]);
+            setQuestionHistory([...questionHistory, nextQuestion]);
+            questionStartMsRef.current = Date.now();
           } else {
             // No valid next question, complete assessment
             handleComplete(newAnswers);
@@ -74,14 +127,13 @@ function SelfAssessment() {
     if (questionHistory.length > 1) {
       const newHistory = [...questionHistory];
       newHistory.pop(); // Remove current
-      const prevQuestionId = newHistory[newHistory.length - 1];
+      const prevQuestion = newHistory[newHistory.length - 1];
       
-      // Find the previous question by traversing the structure
-      const prevQuestion = findQuestionById(prevQuestionId);
-
       if (prevQuestion) {
         setCurrentQuestion(prevQuestion);
         setQuestionHistory(newHistory);
+        questionStartMsRef.current = Date.now();
+        consecutiveFastAnswersRef.current = 0;
 
         // Remove the answer for the current question we're going back from
         const newAnswers = { ...answers };
@@ -91,31 +143,23 @@ function SelfAssessment() {
     }
   };
 
-  // Helper to find question by ID in the adaptive structure
-  const findQuestionById = (targetId) => {
-    // Search through all containers in ADAPTIVE_QUESTIONS
-    for (const containerKey in ADAPTIVE_QUESTIONS) {
-      const container = ADAPTIVE_QUESTIONS[containerKey];
-      
-      // Check if container is a direct question
-      if (container.id === targetId) {
-        return container;
-      }
-      
-      // Check nested questions
-      for (const key in container) {
-        if (typeof container[key] === 'object' && container[key] && container[key].id === targetId) {
-          return container[key];
-        }
-      }
-    }
-    return null;
-  };
-
   // Complete assessment and navigate to results
   const handleComplete = (finalAnswers) => {
+    const totalElapsed = Date.now() - assessmentStartMsRef.current;
+    const answeredCount = Object.keys(finalAnswers || {}).length;
+    const suspiciouslyFastOverall =
+      answeredCount >= 3 && totalElapsed < answeredCount * 500;
+
+    if (suspiciouslyFastOverall) {
+      resetAssessmentWithWarning(
+        "Your responses were completed unusually fast, which looks random. The self‑assessment has been restarted to protect accuracy."
+      );
+      return;
+    }
+
     setIsAnalyzing(true);
-    setError(null);
+    setIsWarningModalOpen(false);
+    setWarningModalMessage(null);
 
     // Save answers for local persistence + review
     localStorage.setItem('assessmentAnswers', JSON.stringify(finalAnswers));
@@ -142,7 +186,6 @@ function SelfAssessment() {
       <div className="assessment-card">
         <h1 className="assessment-title">Self-Assessment</h1>
         <p className="assessment-note">Question {questionHistory.length}</p>
-        {error && <div className="assessment-error">{error}</div>}
         {isAnalyzing && <div className="assessment-loading">Analyzing image via ML model... please wait.</div>}
 
         <h3 className="question-text">{currentQuestion.text}</h3>
@@ -168,6 +211,48 @@ function SelfAssessment() {
           <div />
         </div>
       </div>
+
+      {isWarningModalOpen && (
+        <div
+          className="assessment-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assessment warning"
+          onClick={() => {
+            // Clicking outside closes the modal, but assessment is already reset.
+            setIsWarningModalOpen(false);
+          }}
+        >
+          <div
+            className="assessment-modal"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <div className="assessment-modal-header">
+              <h3 className="assessment-modal-title">Warning</h3>
+              <button
+                type="button"
+                className="assessment-modal-close"
+                onClick={() => setIsWarningModalOpen(false)}
+                aria-label="Close warning"
+              >
+                ×
+              </button>
+            </div>
+            <p className="assessment-modal-message">{warningModalMessage}</p>
+            <div className="assessment-modal-actions">
+              <button
+                type="button"
+                className="nav-button complete-button"
+                onClick={() => setIsWarningModalOpen(false)}
+              >
+                Restart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

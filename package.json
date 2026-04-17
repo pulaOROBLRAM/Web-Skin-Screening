@@ -22,6 +22,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:all": "python dev.py",
     "start": "react-scripts start",
     "build": "vite build",
     "test": "vitest",
