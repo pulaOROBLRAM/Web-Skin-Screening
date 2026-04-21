@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 import './css/SelfAssessment.css';
@@ -19,6 +19,9 @@ function SelfAssessment() {
   const assessmentStartMsRef = useRef(Date.now());
   const questionStartMsRef = useRef(Date.now());
   const consecutiveFastAnswersRef = useRef(0);
+  const answerEventsRef = useRef([]);
+  const tabFocusLossesRef = useRef(0);
+  const tabHiddenTimeRef = useRef(0);
 
   if (!capturedImage) {
     return (
@@ -34,6 +37,22 @@ function SelfAssessment() {
     );
   }
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        tabHiddenTimeRef.current = Date.now();
+      } else if (tabHiddenTimeRef.current > 0) {
+        const hiddenDuration = Date.now() - tabHiddenTimeRef.current;
+        if (hiddenDuration > 3000) {
+          tabFocusLossesRef.current += 1;
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []); // Empty dependency array now
+
   const resetAssessment = () => {
     setIsAnalyzing(false);
     setAnswers({});
@@ -42,13 +61,18 @@ function SelfAssessment() {
     assessmentStartMsRef.current = Date.now();
     questionStartMsRef.current = Date.now();
     consecutiveFastAnswersRef.current = 0;
+    answerEventsRef.current = [];
+    
+    // Update these lines:
+    tabFocusLossesRef.current = 0;
+    tabHiddenTimeRef.current = 0;
 
     try {
       localStorage.removeItem('assessmentAnswers');
       localStorage.removeItem('lastCapturedImage');
       localStorage.removeItem('lastModelPrediction');
     } catch {
-      // ignore storage failures (e.g., privacy mode)
+      // ignore storage failures
     }
   };
 
@@ -58,14 +82,61 @@ function SelfAssessment() {
     setIsWarningModalOpen(true);
   };
 
-  // Guardrail: if someone is clicking through too quickly, treat as random input
-  const isSuspiciouslyFast = (elapsedMs, nextFastCount) => {
-    // Heuristics tuned for UX: allow quick users, block obvious random clicking.
+  const checkSpeed = ({ elapsedMs, nextConsecutiveFastCount }) => {
+    // UX-tuned: allow quick users, block obvious random clicking.
     const MIN_MS_PER_QUESTION = 500;
     const CONSECUTIVE_FAST_LIMIT = 3;
 
-    if (elapsedMs >= MIN_MS_PER_QUESTION) return false;
-    return nextFastCount >= CONSECUTIVE_FAST_LIMIT;
+    if (elapsedMs >= MIN_MS_PER_QUESTION) return 0;
+    return nextConsecutiveFastCount >= CONSECUTIVE_FAST_LIMIT ? 1 : 0.5;
+  };
+
+  const checkPatterns = ({ recentChoiceKeys, recentElapsedMs }) => {
+    // Pattern heuristics: repeated identical selections or “ping-pong” patterns, especially when fast.
+    const windowSize = 6;
+    const keys = (recentChoiceKeys || []).slice(-windowSize);
+    const times = (recentElapsedMs || []).slice(-windowSize);
+    if (keys.length < 4) return 0;
+
+    const fastCount = times.filter((t) => typeof t === 'number' && t < 500).length;
+    const fastRatio = fastCount / times.length;
+
+    const allSame = keys.every((k) => k === keys[0]);
+    if (allSame) return fastRatio >= 0.5 ? 1 : 0.6;
+
+    const unique = new Set(keys).size;
+    const alternating =
+      unique === 2 &&
+      keys.every((k, i) => i < 2 || k === keys[i % 2]); // ABABAB...
+    if (alternating) return fastRatio >= 0.5 ? 0.9 : 0.5;
+
+    return 0;
+  };
+
+ const checkTabFocus = () => {
+    const losses = tabFocusLossesRef.current;
+    //threshold
+    if (losses >= 2) return 0.9;
+    if (losses >= 1) return 0.7;
+    return 0;
+  };
+
+  const ProtectionSystem = {
+    checks: [
+      { name: 'speed', fn: checkSpeed, weight: 0.3 },
+      { name: 'pattern', fn: checkPatterns, weight: 0.2 },
+      { name: 'tabFocus', fn: checkTabFocus, weight: 0.5 }
+    ],
+    threshold: 0.28,
+    evaluate(context) {
+      const totalWeight = this.checks.reduce((sum, c) => sum + (c.weight || 0), 0) || 1;
+      const score = this.checks.reduce((sum, c) => {
+        const raw = Number(c.fn(context) || 0);
+        const clamped = Math.min(1, Math.max(0, raw));
+        return sum + clamped * (c.weight || 0);
+      }, 0) / totalWeight;
+      return { score, isBlocked: score >= this.threshold };
+    }
   };
 
   // Handle answer selection
@@ -76,7 +147,16 @@ function SelfAssessment() {
     const elapsed = now - questionStartMsRef.current;
     const nextFastCount = elapsed < 500 ? consecutiveFastAnswersRef.current + 1 : 0;
 
-    if (isSuspiciouslyFast(elapsed, nextFastCount)) {
+    const recentChoiceKeys = answerEventsRef.current.map((e) => e.choiceKey);
+    const recentElapsedMs = answerEventsRef.current.map((e) => e.elapsedMs);
+    const { isBlocked } = ProtectionSystem.evaluate({
+      elapsedMs: elapsed,
+      nextConsecutiveFastCount: nextFastCount,
+      recentChoiceKeys: [...recentChoiceKeys, choiceKey],
+      recentElapsedMs: [...recentElapsedMs, elapsed]
+    });
+
+    if (isBlocked) {
       resetAssessmentWithWarning(
         "We detected random/too-fast responses. For accuracy, the self‑assessment has been restarted. Please answer carefully."
       );
@@ -84,6 +164,10 @@ function SelfAssessment() {
     }
 
     consecutiveFastAnswersRef.current = nextFastCount;
+    answerEventsRef.current = [
+      ...answerEventsRef.current,
+      { t: now, questionId: currentQuestion.id, choiceKey, elapsedMs: elapsed }
+    ];
     const newAnswers = { ...answers, [currentQuestion.id]: choiceKey };
     setAnswers(newAnswers);
 
@@ -134,6 +218,7 @@ function SelfAssessment() {
         setQuestionHistory(newHistory);
         questionStartMsRef.current = Date.now();
         consecutiveFastAnswersRef.current = 0;
+        answerEventsRef.current = answerEventsRef.current.filter((e) => e.questionId !== currentQuestion.id);
 
         // Remove the answer for the current question we're going back from
         const newAnswers = { ...answers };
@@ -147,10 +232,15 @@ function SelfAssessment() {
   const handleComplete = (finalAnswers) => {
     const totalElapsed = Date.now() - assessmentStartMsRef.current;
     const answeredCount = Object.keys(finalAnswers || {}).length;
-    const suspiciouslyFastOverall =
-      answeredCount >= 3 && totalElapsed < answeredCount * 500;
+    const averageMsPerAnswer = answeredCount > 0 ? totalElapsed / answeredCount : totalElapsed;
+    const overall = ProtectionSystem.evaluate({
+      elapsedMs: averageMsPerAnswer,
+      nextConsecutiveFastCount: consecutiveFastAnswersRef.current,
+      recentChoiceKeys: answerEventsRef.current.map((e) => e.choiceKey),
+      recentElapsedMs: answerEventsRef.current.map((e) => e.elapsedMs)
+    });
 
-    if (suspiciouslyFastOverall) {
+    if (answeredCount >= 3 && overall.isBlocked) {
       resetAssessmentWithWarning(
         "Your responses were completed unusually fast, which looks random. The self‑assessment has been restarted to protect accuracy."
       );
