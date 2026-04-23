@@ -16,7 +16,6 @@ function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    // If arriving from camera flow, reuse the captured image.
     if (location.state?.capturedImage) {
       setSelectedImage(location.state.capturedImage);
       setImageSource('camera');
@@ -103,16 +102,22 @@ function UploadPage() {
         },
       });
 
-      // Check if backend flagged the image as non-skin
       if (response.data.success === false && response.data.error === 'non_skin_image') {
         setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
         return;
       }
 
+      try {
+        sessionStorage.setItem('assessmentImage', selectedImage);
+        sessionStorage.setItem('imageTimestamp', Date.now().toString());
+      } catch (storageError) {
+        console.warn('Failed to store image in sessionStorage:', storageError);
+      }
+
       navigate('/assessment', {
         state: {
-          capturedImage: selectedImage,
-          predictions: response.data
+          hasCompletedUpload: true,
+          modelPrediction: response.data
         }
       });
     } catch (err) {
@@ -144,7 +149,6 @@ function UploadPage() {
 
   return (
     <div className="upload-wrapper">
-      {/* Header */}
       <nav className="navbar">
         <div className="nav-container">
           <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>SkinSight AI</div>
@@ -211,7 +215,6 @@ function UploadPage() {
                   </div>
                 </div>
 
-                {/* Visual feedback for dragging */}
                 {isDragging && (
                   <div className="drag-overlay">
                     <div className="overlay-content">
@@ -288,7 +291,6 @@ function UploadPage() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="footer">
         <div className="container">
           <div className="footer-content">
@@ -313,4 +315,4 @@ function UploadPage() {
   );
 }
 
-export default UploadPage; 
+export default UploadPage;
