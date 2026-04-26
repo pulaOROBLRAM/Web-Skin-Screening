@@ -97,7 +97,7 @@ function UploadPage() {
         const formData = new FormData();
         formData.append('file', imageFile);
 
-        const response = await axios.post('http://localhost:5000/predict', formData, {
+        const response = await axios.post('/api/predict', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -120,7 +120,7 @@ function UploadPage() {
         let errorMessage = 'Error analyzing image. Please try again.';
 
         if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
-          errorMessage = 'Cannot connect to the server. Please make sure the backend server is running on port 5000.';
+          errorMessage = err.response ? `API Error: ${err.response.status} - ${JSON.stringify(err.response.data)}` : `Network Error: ${err.message}`;
         } else if (err.response) {
           errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
         } else if (err.request) {

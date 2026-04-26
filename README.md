@@ -1,3 +1,12 @@
+---
+title: Skin Screening Api
+emoji: 🩺
+colorFrom: blue
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
 # SkinSight AI
 ### Advanced AI-Powered Skin Health Assessment
 

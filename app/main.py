@@ -65,6 +65,9 @@ async def predict(file: UploadFile = File(...)):
         # Get predictions
         predictions = prediction_service.predict(contents)
         
+        if not predictions.get("success"):
+            raise HTTPException(status_code=400, detail=predictions.get("message", "Prediction failed"))
+        
         return PredictionResponse(**predictions)
     
     except Exception as e:

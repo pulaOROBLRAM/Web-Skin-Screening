@@ -1,0 +1,10 @@
+app/
+api/
+venv/
+saved_model/
+*.db
+*.py
+optuna*
+__pycache__/
+.pytest_cache/
+requirements.txt

@@ -355,10 +355,10 @@ function ResultsPage() {
 
                   return (
                     <div key={index} className={`condition-list-item ${index === 0 ? 'highlighted-top-condition' : ''}`} style={{ flexWrap: 'wrap' }}>
-                      <div className="condition-name-container" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div className="condition-name-container" style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
                           {index === 0 && <span className="top-match-badge">Primary Match</span>}
-                          <div className="condition-name-text">{diseaseName}</div>
+                          <div className="condition-name-text" style={{ lineHeight: '1' }}>{diseaseName}</div>
                         </div>
                         <div className="progress-circle" style={{ '--progress': displayScore }}>
                           <span className="progress-value">{displayScore}%</span>
