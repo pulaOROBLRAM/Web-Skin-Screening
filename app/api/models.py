@@ -1,7 +1,10 @@
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, Optional
 
 class PredictionResponse(BaseModel):
-    predictions: Dict[str, float]
-    top_prediction: str
-    confidence: float 
+    success: bool = True
+    predictions: Optional[Dict[str, float]] = None
+    top_prediction: Optional[str] = None
+    confidence: Optional[float] = None
+    error: Optional[str] = None
+    message: Optional[str] = None

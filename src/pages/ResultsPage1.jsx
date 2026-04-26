@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/free-solid-svg-icons';
@@ -11,24 +11,62 @@ import {
 import './css/ResultsPage.css';
 import { CONFIG } from '../config';
 
-// Utility imports
 import { combinePredictions, findConditionDescription, formatModelPrediction } from '../utils/predictionProcessing';
 import { ADAPTIVE_QUESTIONS } from '../data/adaptiveQuestionnaire';
 
 function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const capturedImage = location.state?.capturedImage;
+  
   const assessmentAnswersRaw = location.state?.answers || {};
   const rawModelPrediction = location.state?.modelPrediction;
+  
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
-  // Format the raw backend response so the scoring engine can read topPrediction
   const modelPrediction = formatModelPrediction(rawModelPrediction);
 
-  // Report download configuration (kept intact)
   const [reportSettings, setReportSettings] = useState(CONFIG.REPORT_SETTINGS);
   const [showReportConfig, setShowReportConfig] = useState(false);
-  const [showDebug, setShowDebug] = useState(false); // Toggle for viewing raw calculation math
+  const [showDebug, setShowDebug] = useState(false);
+
+  useEffect(() => {
+    const retrieveImage = () => {
+      try {
+        const storedImage = sessionStorage.getItem('assessmentImage');
+        const imageTimestamp = sessionStorage.getItem('imageTimestamp');
+        
+        if (storedImage && imageTimestamp) {
+          const age = Date.now() - parseInt(imageTimestamp);
+          if (age < 30 * 60 * 1000) {
+            setCapturedImage(storedImage);
+            setImageError(false);
+          } else {
+            sessionStorage.removeItem('assessmentImage');
+            sessionStorage.removeItem('imageTimestamp');
+            setImageError(true);
+            console.log('Image expired');
+          }
+        } else {
+          setImageError(true);
+          console.log('No image found in sessionStorage');
+        }
+      } catch (error) {
+        console.error('Failed to retrieve image from sessionStorage:', error);
+        setImageError(true);
+      } finally {
+        setImageLoading(false);
+      }
+    };
+    
+    retrieveImage();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
 
   const handleToggleSetting = (setting) => {
     setReportSettings(prev => ({
@@ -44,16 +82,30 @@ function ResultsPage() {
     topN: 4
   });
   const combinedView = mlAndClinicalResults.combined || [];
-  if (!capturedImage) {
+
+  if (imageLoading) {
+    return (
+      <div className="results-container">
+        <div className="results-content">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading your results...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (imageError) {
     return (
       <div className="results-container">
         <div className="results-content">
           <div className="error-state">
             <FaExclamationTriangle className="error-icon" />
-            <h2>Error</h2>
-            <p>No image available.</p>
-            <button className="action-btn secondary-btn" onClick={() => navigate('/')}>
-              <FaHome /> Return Home
+            <h2>Image Not Found</h2>
+            <p>The uploaded image is no longer available. Please restart the assessment.</p>
+            <button className="action-btn secondary-btn" onClick={() => navigate('/upload')}>
+              <FaHome /> Start Over
             </button>
           </div>
         </div>
@@ -61,7 +113,23 @@ function ResultsPage() {
     );
   }
 
-  // Diagnosis results are driven primarily by combined ML+similarity scores
+  if (!capturedImage) {
+    return (
+      <div className="results-container">
+        <div className="results-content">
+          <div className="error-state">
+            <FaExclamationTriangle className="error-icon" />
+            <h2>No Image Available</h2>
+            <p>Please upload an image first.</p>
+            <button className="action-btn secondary-btn" onClick={() => navigate('/upload')}>
+              <FaHome /> Go to Upload
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const toAssessmentAnswerList = (rawAnswers) => {
     if (!rawAnswers || Object.keys(rawAnswers).length === 0) return [];
 
@@ -89,11 +157,11 @@ function ResultsPage() {
       });
 
       if (option?.disease) {
-        break; // Match reached
+        break;
       } else if (option?.nextQuestion) {
         nextContainerId = option.nextQuestion;
       } else {
-        break; // End
+        break;
       }
     }
 
@@ -120,8 +188,7 @@ function ResultsPage() {
   const handleDownloadReport = () => {
     const settings = reportSettings;
 
-    // Modular Section Helpers
-    const imageSection = settings.includeImage ? `
+    const imageSection = settings.includeImage && capturedImage ? `
       <div class="section">
         <div class="section-title">Analysis Image</div>
         <div class="image-container">
@@ -307,11 +374,8 @@ function ResultsPage() {
     window.URL.revokeObjectURL(url);
   };
 
-
-
   return (
     <div className="results-container">
-      {/* Header Navigation */}
       <nav className="results-nav">
         <div className="nav-content">
           <div className="nav-logo" style={{ display: 'flex', alignItems: 'center' }}>
@@ -332,19 +396,17 @@ function ResultsPage() {
           <h1>Analysis Results</h1>
         </div>
 
-        {/* Analysis Section (Conditions | Image + Recommendations) */}
         <div className="results-analysis-container">
 
-          {/* Left Column: Conditions List */}
           <div className="conditions-list-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="analysis-header">Detected Conditions</h2>
-              {/*<button
+              <button
                 onClick={() => setShowDebug(!showDebug)}
                 style={{ fontSize: '11px', padding: '4px 8px', background: showDebug ? '#ef4444' : '#e5e7eb', color: showDebug ? 'white' : '#4b5563', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 {showDebug ? 'Hide Debug Math' : 'Show Debug Math'}
-              </button>*/}
+              </button>
             </div>
             <div className="conditions-list">
               {combinedView.length > 0 ? (
@@ -365,7 +427,6 @@ function ResultsPage() {
                         </div>
                       </div>
 
-                      {/* Interactive Math Debugger */}
                       {showDebug && result.debugMath && (
                         <div style={{ width: '100%', marginTop: '15px', padding: '10px', backgroundColor: '#f8fafc', borderLeft: '3px solid #3b82f6', fontSize: '12px', fontFamily: 'monospace', color: '#334155' }}>
                           <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#1e40af' }}>RAW SCORE ACCUMULATION: {result.debugMath.rawTotal} points</div>
@@ -377,6 +438,10 @@ function ResultsPage() {
                             <span>AI Symptom and Visual Similarity (Max 0.80):</span>
                             <span>{result.debugMath.similarityRaw} pts</span>
                           </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '3px', marginTop: '3px', color: '#0369a1', fontWeight: 'bold' }}>
+                            <span>Model Prediction:</span>
+                            <span>{result.debugMath.modelTopName} ({(parseFloat(result.debugMath.modelTopConf) * 100).toFixed(1)}%)</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -387,12 +452,10 @@ function ResultsPage() {
               )}
             </div>
 
-            {/* Clinical Disclaimer moved here */}
             <div className="recommendation-note">
               <p><strong>Clinical Note:</strong> Please contact a dermatologist for a professional diagnosis</p>
             </div>
 
-            {/* Book Appointment - sticky with conditions */}
             <button
               className="book-appointment-btn"
               onClick={() => window.location.href = CONFIG.BOOKING_URL}
@@ -401,9 +464,7 @@ function ResultsPage() {
             </button>
           </div>
 
-          {/* Right Column: Image + Recommendations Stack */}
           <div className="image-recs-stack">
-            {/* Top: Image */}
             <div className="analysis-image-container">
               {capturedImage ? (
                 <div className="image-wrapper">
@@ -424,7 +485,6 @@ function ResultsPage() {
               )}
             </div>
 
-            {/* Bottom: About the Primary Condition */}
             <div className="recommendations-container">
               <h2 className="analysis-header">About the Primary Condition</h2>
               <div className="condition-knowledge-base">
@@ -449,7 +509,6 @@ function ResultsPage() {
 
         </div>
 
-        {/* Self-Assessment Answers - Two Column Below */}
         <div className="assessment-answers-section">
           <h2 className="section-title">Self-Assessment Answers</h2>
           <div className="answers-list">
@@ -469,7 +528,6 @@ function ResultsPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="results-actions">
           <button className="action-btn primary-btn" onClick={() => setShowReportConfig(!showReportConfig)}>
             <FaDownload /> {showReportConfig ? 'Hide Options' : 'Download My Results'}
@@ -479,7 +537,6 @@ function ResultsPage() {
           </button>
         </div>
 
-        {/* Report Download Configuration UI - shown only when toggled */}
         {showReportConfig && (
           <div className="report-config-panel">
             <div className="report-config-title">
@@ -512,13 +569,12 @@ function ResultsPage() {
               </label>
             </div>
             <button className="action-btn primary-btn download-report-btn" onClick={handleDownloadReport}>
-              <FaDownload /> Download Report as PDF
+              <FaDownload /> Download Report as HTML
             </button>
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <footer className="results-footer">
         <div className="footer-left">
           <h3>SkinSight AI</h3>

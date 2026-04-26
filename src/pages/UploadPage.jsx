@@ -16,7 +16,6 @@ function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    // If arriving from camera flow, reuse the captured image.
     if (location.state?.capturedImage) {
       setSelectedImage(location.state.capturedImage);
       setImageSource('camera');
@@ -66,7 +65,7 @@ function UploadPage() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files[0];
     processFile(file);
   };
@@ -91,6 +90,22 @@ function UploadPage() {
 
     setLoading(true);
     setError(null);
+
+    try {
+      const imageFile = dataURLtoFile(selectedImage, 'image.jpg');
+      const formData = new FormData();
+      formData.append('file', imageFile);
+
+      const response = await axios.post('http://localhost:5000/predict', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success === false && response.data.error === 'non_skin_image') {
+        setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
+        return;
+      }
 
       try {
         const imageFile = dataURLtoFile(selectedImage, 'image.jpg');
@@ -126,11 +141,23 @@ function UploadPage() {
         } else if (err.request) {
           errorMessage = 'No response from server. Please check if the backend is running.';
         }
+      });
+    } catch (err) {
+      console.error('Error details:', err);
+      let errorMessage = 'Error analyzing image. Please try again.';
 
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
+      if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+        errorMessage = 'Cannot connect to the server. Please make sure the backend server is running on port 5000.';
+      } else if (err.response) {
+        errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
+      } else if (err.request) {
+        errorMessage = 'No response from server. Please check if the backend is running.';
       }
+
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -144,7 +171,6 @@ function UploadPage() {
 
   return (
     <div className="upload-wrapper">
-      {/* Header */}
       <nav className="navbar">
         <div className="nav-container">
           <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>SkinSight AI</div>
@@ -170,7 +196,7 @@ function UploadPage() {
             </header>
 
             <div className="upload-hub">
-              <div 
+              <div
                 className={`drop-zone-container ${isDragging ? 'dragging' : ''}`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -183,7 +209,7 @@ function UploadPage() {
                   </div>
                   <h2 className="hub-title">Drag & Drop Your Image</h2>
                   <p className="hub-subtitle">High-quality photos provide better assessment accuracy</p>
-                  
+
                   <div className="hub-divider">
                     <span>OR</span>
                   </div>
@@ -210,8 +236,7 @@ function UploadPage() {
                     </button>
                   </div>
                 </div>
-                
-                {/* Visual feedback for dragging */}
+
                 {isDragging && (
                   <div className="drag-overlay">
                     <div className="overlay-content">
@@ -221,19 +246,6 @@ function UploadPage() {
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="upload-guidelines">
-              <h3>
-                <FontAwesomeIcon icon={faImage} style={{ marginRight: '10px', color: 'var(--primary-blue)' }} />
-                Image Guidelines
-              </h3>
-              <ul>
-                <li>Ensure the area is well-lit with natural light if possible.</li>
-                <li>Avoid using camera flash to prevent overexposure.</li>
-                <li>Keep the camera steady and ensure the image is sharp and in focus.</li>
-                <li>Center the affected area in the middle of the frame.</li>
-              </ul>
             </div>
           </div>
         ) : (
@@ -301,7 +313,6 @@ function UploadPage() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="footer">
         <div className="container">
           <div className="footer-content">
@@ -326,4 +337,4 @@ function UploadPage() {
   );
 }
 
-export default UploadPage; 
+export default UploadPage;

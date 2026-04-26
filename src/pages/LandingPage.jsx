@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCamera, faListUl, faShieldAlt, faUserGear,
   faCheck, faXmark, faMobileScreen, faUserDoctor, faStethoscope,
-  faPhone, faImage, faHome, faInfoCircle, faQuestionCircle
+  faPhone, faImage, faHome, faInfoCircle, faQuestionCircle, faTimes, faLightbulb, faSun, faCompressArrowsAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 import { FaStethoscope } from 'react-icons/fa';
@@ -14,6 +14,7 @@ import { FaStethoscope } from 'react-icons/fa';
 function LandingPage() {
   const navigate = useNavigate();
   const [formStatus, setFormStatus] = useState('');
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -24,6 +25,11 @@ function LandingPage() {
   };
 
   const handleStart = () => {
+    setShowGuidelines(true);
+  };
+
+  const proceedToUpload = () => {
+    setShowGuidelines(false);
     navigate('/upload');
   };
 
@@ -72,10 +78,10 @@ function LandingPage() {
             <div className="hero-text-content animate-fade-in">
               <h1 className="hero-title">Empower Your Skin Health Journey</h1>
               <p className="hero-subtitle">
-                Advanced AI technology that scans and analyzes skin conditions in seconds. 
+                Advanced AI technology that scans and analyzes skin conditions in seconds.
                 Get professional-grade insights from the comfort of your home.
               </p>
-              
+
               <div className="hero-cta-container">
                 <button className="hero-btn primary" onClick={handleStart}>
                   <FontAwesomeIcon icon={faCamera} /> Start Free Assessment
@@ -326,6 +332,80 @@ function LandingPage() {
       <div className="floating-scan" onClick={handleStart} title="Start Scan">
         <FontAwesomeIcon icon={faCamera} />
       </div>
+
+      {/* Guidelines Modal */}
+      {showGuidelines && (
+        <div className="modal-overlay" onClick={() => setShowGuidelines(false)}>
+          <div className="guidelines-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                <FontAwesomeIcon icon={faImage} style={{ color: 'var(--accent-blue)' }} />
+                Image Guidelines
+              </h2>
+              <button className="modal-close" onClick={() => setShowGuidelines(false)}>
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p style={{ color: 'var(--text-gray)', fontWeight: 500 }}>
+                For the most accurate AI analysis, please follow these simple image capturing steps:
+              </p>
+
+              <div className="guideline-items">
+                <div className="guideline-item">
+                  <div className="guideline-item-icon">
+                    <FontAwesomeIcon icon={faSun} />
+                  </div>
+                  <div className="guideline-item-text">
+                    <h4>Good Lighting</h4>
+                    <p>Ensure the area is well-lit, preferably with natural daylight.</p>
+                  </div>
+                </div>
+
+                <div className="guideline-item">
+                  <div className="guideline-item-icon">
+                    <FontAwesomeIcon icon={faLightbulb} />
+                  </div>
+                  <div className="guideline-item-text">
+                    <h4>No Flash</h4>
+                    <p>Avoid using camera flash as it can create overexposure and hide details.</p>
+                  </div>
+                </div>
+
+                <div className="guideline-item">
+                  <div className="guideline-item-icon">
+                    <FontAwesomeIcon icon={faCompressArrowsAlt} />
+                  </div>
+                  <div className="guideline-item-text">
+                    <h4>Sharp Focus</h4>
+                    <p>Keep the camera steady and ensure the affected area is in sharp focus.</p>
+                  </div>
+                </div>
+
+                <div className="guideline-item">
+                  <div className="guideline-item-icon">
+                    <FontAwesomeIcon icon={faCamera} />
+                  </div>
+                  <div className="guideline-item-text">
+                    <h4>Centered Subject</h4>
+                    <p>Center the affected area directly in the middle of your frame.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-modal-cancel" onClick={() => setShowGuidelines(false)}>
+                Cancel
+              </button>
+              <button className="btn-modal-primary" onClick={proceedToUpload}>
+                I Understand, Let's Start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
     </div>
