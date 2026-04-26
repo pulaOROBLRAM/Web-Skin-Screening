@@ -18,6 +18,10 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .upload-wrapper {
   background: var(--bg-white);
   color: var(--text-dark);
@@ -323,7 +327,7 @@
 
 .upload-guidelines ul {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 1rem;
   padding-left: 0;
   list-style: none;
@@ -541,5 +545,24 @@
   .footer-links {
     flex-direction: column;
     gap: 15px;
+  }
+
+  /* Fix Hub Buttons Overflow */
+  .hub-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .hub-btn {
+    width: 100%;
+  }
+
+  .drop-zone-container {
+    padding: 3rem 1.5rem;
+  }
+
+  .hub-title {
+    font-size: 1.75rem;
   }
 }

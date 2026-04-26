@@ -1,0 +1,7 @@
+node_modules/
+venv/
+.git/
+.husky/
+dist/
+__pycache__/
+.pytest_cache/

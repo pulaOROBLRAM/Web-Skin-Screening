@@ -20,6 +20,11 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
 body {
   margin: 0;
   font-family: "Inter", system-ui, -apple-system, sans-serif;
@@ -146,7 +151,7 @@ body {
 
 .conditions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 1.5rem;
 }
 
@@ -269,7 +274,7 @@ body {
 
 .assessment-answers-section .answers-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 1.5rem;
 }
 
