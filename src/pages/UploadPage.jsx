@@ -27,12 +27,16 @@ function UploadPage() {
   };
 
   const handleFileChange = (event) => {
+    console.log('handleFileChange called');
     const file = event.target.files[0];
     processFile(file);
   };
 
   const processFile = (file) => {
+    console.log('processFile called with file:', file);
     if (file && file.type.startsWith('image/')) {
+      console.log('Valid image file');
+      setError(null);
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result);
@@ -40,7 +44,10 @@ function UploadPage() {
       };
       reader.readAsDataURL(file);
     } else if (file) {
+      console.log('Invalid file type:', file.type);
       setError('Please upload a valid image file.');
+    } else {
+      console.log('No file provided');
     }
   };
 
@@ -65,6 +72,7 @@ function UploadPage() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    console.log('handleDrop called');
 
     const file = e.dataTransfer.files[0];
     processFile(file);
@@ -102,52 +110,36 @@ function UploadPage() {
         },
       });
 
-      if (response.data.success === false && response.data.error === 'non_skin_image') {
-        setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
+      if (response.data.success === false) {
+        if (response.data.error === 'non_skin_image') {
+          setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
+        } else {
+          setError(response.data.message || 'Error analyzing image. Please try again.');
+        }
         return;
       }
 
       try {
-        const imageFile = dataURLtoFile(selectedImage, 'image.jpg');
-        const formData = new FormData();
-        formData.append('file', imageFile);
+        sessionStorage.setItem('assessmentImage', selectedImage);
+        sessionStorage.setItem('imageTimestamp', Date.now().toString());
+      } catch (storageError) {
+        console.warn('Failed to store assessment image in sessionStorage:', storageError);
+      }
 
-        const response = await axios.post('/api/predict', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        // Check if backend flagged the image as non-skin
-        if (response.data.success === false && response.data.error === 'non_skin_image') {
-          setError('This image does not appear to be a skin condition. Please upload a clear, close-up photo of the affected skin area.');
-          return;
-        }
-
-        navigate('/assessment', {
-          state: {
-            capturedImage: selectedImage,
-            predictions: response.data
-          }
-        });
-      } catch (err) {
-        console.error('Error details:', err);
-        let errorMessage = 'Error analyzing image. Please try again.';
-
-        if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
-          errorMessage = err.response ? `API Error: ${err.response.status} - ${JSON.stringify(err.response.data)}` : `Network Error: ${err.message}`;
-        } else if (err.response) {
-          errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
-        } else if (err.request) {
-          errorMessage = 'No response from server. Please check if the backend is running.';
-        }
+      navigate('/assessment', {
+        state: {
+          capturedImage: selectedImage,
+          predictions: response.data,
+        },
       });
     } catch (err) {
       console.error('Error details:', err);
       let errorMessage = 'Error analyzing image. Please try again.';
 
       if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
-        errorMessage = 'Cannot connect to the server. Please make sure the backend server is running on port 5000.';
+        errorMessage = err.response
+          ? `API Error: ${err.response.status} - ${JSON.stringify(err.response.data)}`
+          : `Network Error: ${err.message}`;
       } else if (err.response) {
         errorMessage = `Server error: ${err.response.data?.detail || err.response.statusText || 'Unknown error'}`;
       } else if (err.request) {
@@ -246,6 +238,13 @@ function UploadPage() {
                   </div>
                 )}
               </div>
+
+              {error && (
+                <div className="analysis-error-box">
+                  <strong>Upload Error</strong>
+                  <p>{error}</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
