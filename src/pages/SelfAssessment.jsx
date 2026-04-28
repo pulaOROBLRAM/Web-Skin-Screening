@@ -43,18 +43,11 @@ function SelfAssessment() {
       scoreForMultipleSwitches: 1.0,
       weight: 0.5,
     },
-
-    mouseMovement: {
-      enabled: true,
-      minDistancePx: 50,
-      suspiciousClickThreshold: 1,
-      weight: 0.15,
-    },
     
     global: {
-      threshold: 0.25,
-      minAnswersForBlock: 2,
-      warningMessage: "Suspicious behavior detected. Assessment restarted for accuracy."
+      threshold: 0.35,
+      minAnswersForBlock: 3,
+      warningMessage: "Please answer thoughtfully. Random selections have been detected."
     }
   };
   
@@ -67,15 +60,14 @@ function SelfAssessment() {
   const [warningModalMessage, setWarningModalMessage] = useState(null);
   const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
   
+  const [toastMessage, setToastMessage] = useState(null);
+  
   const assessmentStartMsRef = useRef(Date.now());
   const questionStartMsRef = useRef(Date.now());
   const consecutiveFastAnswersRef = useRef(0);
   const answerEventsRef = useRef([]);
   const tabFocusLossesRef = useRef(0);
   const tabHiddenTimeRef = useRef(0);
-  const mouseMovementsRef = useRef([]);
-  const lastMousePositionRef = useRef({ x: 0, y: 0 });
-  const suspiciousClicksRef = useRef(0);
   const lastAnswerTimeRef = useRef(0);
   const sessionStartRef = useRef(Date.now());
   const answerTimestampsRef = useRef([]);
@@ -83,7 +75,41 @@ function SelfAssessment() {
   const RATE_LIMIT_MS = 200;
   const MAX_ANSWERS_PER_MINUTE = 30;
   const validModelPrediction = isValidModelPrediction(modelPrediction);
-  
+
+  const resetAssessment = () => {
+    setIsAnalyzing(false);
+    setAnswers({});
+    setCurrentQuestion(ADAPTIVE_QUESTIONS.q1);
+    setQuestionHistory([ADAPTIVE_QUESTIONS.q1]);
+    assessmentStartMsRef.current = Date.now();
+    questionStartMsRef.current = Date.now();
+    consecutiveFastAnswersRef.current = 0;
+    answerEventsRef.current = [];
+    tabFocusLossesRef.current = 0;
+    tabHiddenTimeRef.current = 0;
+    lastAnswerTimeRef.current = 0;
+    sessionStartRef.current = Date.now();
+    answerTimestampsRef.current = [];
+    setToastMessage(null);
+
+    try {
+      localStorage.removeItem('assessmentAnswers');
+      localStorage.removeItem('lastModelPrediction');
+    } catch {
+    }
+  };
+
+  const resetAssessmentWithWarning = (message) => {
+    resetAssessment();
+    setWarningModalMessage(message);
+    setIsWarningModalOpen(true);
+  };
+
+  const showToast = (message) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
   useEffect(() => {
     const checkUploadStatus = () => {
       try {
@@ -147,33 +173,13 @@ function SelfAssessment() {
         const hiddenDuration = Date.now() - tabHiddenTimeRef.current;
         if (hiddenDuration > SENSITIVITY.tabFocus.minHiddenMs) {
           tabFocusLossesRef.current += 1;
+          showToast('Stay on page for accurate results');
         }
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  useEffect(() => {
-    if (!SENSITIVITY.mouseMovement.enabled) return;
-    
-    const trackMouse = (e) => {
-      lastMousePositionRef.current = { x: e.clientX, y: e.clientY };
-      
-      mouseMovementsRef.current.push({
-        x: e.clientX,
-        y: e.clientY,
-        timestamp: Date.now()
-      });
-      
-      if (mouseMovementsRef.current.length > 50) {
-        mouseMovementsRef.current.shift();
-      }
-    };
-    
-    window.addEventListener('mousemove', trackMouse);
-    return () => window.removeEventListener('mousemove', trackMouse);
   }, []);
 
   useEffect(() => {
@@ -232,44 +238,21 @@ function SelfAssessment() {
     );
   }
 
-  const resetAssessment = () => {
-    setIsAnalyzing(false);
-    setAnswers({});
-    setCurrentQuestion(ADAPTIVE_QUESTIONS.q1);
-    setQuestionHistory([ADAPTIVE_QUESTIONS.q1]);
-    assessmentStartMsRef.current = Date.now();
-    questionStartMsRef.current = Date.now();
-    consecutiveFastAnswersRef.current = 0;
-    answerEventsRef.current = [];
-    tabFocusLossesRef.current = 0;
-    tabHiddenTimeRef.current = 0;
-    mouseMovementsRef.current = [];
-    lastMousePositionRef.current = { x: 0, y: 0 };
-    suspiciousClicksRef.current = 0;
-    lastAnswerTimeRef.current = 0;
-    sessionStartRef.current = Date.now();
-    answerTimestampsRef.current = [];
-
-    try {
-      localStorage.removeItem('assessmentAnswers');
-      localStorage.removeItem('lastModelPrediction');
-    } catch {
-    }
-  };
-
-  const resetAssessmentWithWarning = (message) => {
-    resetAssessment();
-    setWarningModalMessage(message);
-    setIsWarningModalOpen(true);
-  };
-
   const checkSpeed = ({ elapsedMs, nextConsecutiveFastCount }) => {
     if (!SENSITIVITY.speed.enabled) return 0;
     
     const { minMsPerQuestion, consecutiveFastLimit } = SENSITIVITY.speed;
     
     if (elapsedMs >= minMsPerQuestion) return 0;
-    return nextConsecutiveFastCount >= consecutiveFastLimit ? 1 : 0.5;
+    
+    if (nextConsecutiveFastCount >= consecutiveFastLimit) {
+      showToast('Please take your time');
+      return 1;
+    }
+    if (nextConsecutiveFastCount === consecutiveFastLimit - 1) {
+      showToast('Read carefully');
+    }
+    return 0.5;
   };
 
   const checkPatterns = ({ recentChoiceKeys, recentElapsedMs }) => {
@@ -286,11 +269,24 @@ function SelfAssessment() {
     const fastRatio = fastCount / times.length;
 
     const allSame = keys.every((k) => k === keys[0]);
-    if (allSame) return fastRatio >= 0.5 ? allSameMaxScore : allSameMediumScore;
+    if (allSame) {
+      if (fastRatio >= 0.5) {
+        showToast('Pattern detected. Answer thoughtfully');
+        return allSameMaxScore;
+      }
+      showToast('Consider your answers carefully');
+      return allSameMediumScore;
+    }
 
     const unique = new Set(keys).size;
     const alternating = unique === 2 && keys.every((k, i) => i < 2 || k === keys[i % 2]);
-    if (alternating) return fastRatio >= 0.5 ? alternatingMaxScore : alternatingMediumScore;
+    if (alternating) {
+      if (fastRatio >= 0.5) {
+        showToast('Pattern detected');
+        return alternatingMaxScore;
+      }
+      return alternatingMediumScore;
+    }
 
     return 0;
   };
@@ -306,48 +302,15 @@ function SelfAssessment() {
     return 0;
   };
 
-  const checkMouseMovement = () => {
-    if (!SENSITIVITY.mouseMovement.enabled) return 0;
-    
-    const { minDistancePx, suspiciousClickThreshold } = SENSITIVITY.mouseMovement;
-    
-    const recentMovements = mouseMovementsRef.current.slice(-10);
-    
-    if (recentMovements.length < 5) return 0;
-    
-    let totalDistance = 0;
-    for (let i = 1; i < recentMovements.length; i++) {
-      const dx = Math.min(Math.abs(recentMovements[i].x - recentMovements[i-1].x), 500);
-      const dy = Math.min(Math.abs(recentMovements[i].y - recentMovements[i-1].y), 500);
-      totalDistance += Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    const averageDistance = Math.min(totalDistance / recentMovements.length, 1000);
-    
-    if (averageDistance < minDistancePx) {
-      suspiciousClicksRef.current += 1;
-      
-      if (suspiciousClicksRef.current >= suspiciousClickThreshold) {
-        return 0.9;
-      }
-      return 0.5;
-    }
-    
-    suspiciousClicksRef.current = Math.max(0, suspiciousClicksRef.current - 1);
-    return 0;
-  };
-
   const ProtectionSystem = {
     checks: [
       { name: 'speed', fn: checkSpeed, weight: SENSITIVITY.speed.weight },
       { name: 'pattern', fn: checkPatterns, weight: SENSITIVITY.pattern.weight },
-      { name: 'tabFocus', fn: checkTabFocus, weight: SENSITIVITY.tabFocus.weight },
-      { name: 'mouseMovement', fn: checkMouseMovement, weight: SENSITIVITY.mouseMovement.weight }
+      { name: 'tabFocus', fn: checkTabFocus, weight: SENSITIVITY.tabFocus.weight }
     ].filter(check => {
       if (check.name === 'speed') return SENSITIVITY.speed.enabled;
       if (check.name === 'pattern') return SENSITIVITY.pattern.enabled;
       if (check.name === 'tabFocus') return SENSITIVITY.tabFocus.enabled;
-      if (check.name === 'mouseMovement') return SENSITIVITY.mouseMovement.enabled;
       return true;
     }),
     
@@ -378,6 +341,7 @@ function SelfAssessment() {
     const now = Date.now();
     
     if (now - lastAnswerTimeRef.current < RATE_LIMIT_MS) {
+      showToast('Please wait');
       return;
     }
     
@@ -402,14 +366,12 @@ function SelfAssessment() {
 
     const recentChoiceKeys = answerEventsRef.current.map((e) => e.choiceKey);
     const recentElapsedMs = answerEventsRef.current.map((e) => e.elapsedMs);
-    const clickPosition = { ...lastMousePositionRef.current };
     
     const { isBlocked } = ProtectionSystem.evaluate({
       elapsedMs: elapsed,
       nextConsecutiveFastCount: nextFastCount,
       recentChoiceKeys: [...recentChoiceKeys, choiceKey],
-      recentElapsedMs: [...recentElapsedMs, elapsed],
-      clickPosition: clickPosition 
+      recentElapsedMs: [...recentElapsedMs, elapsed]
     });
 
     if (isBlocked) {
@@ -524,6 +486,12 @@ function SelfAssessment() {
 
   return (
     <div className="assessment-container">
+      {toastMessage && (
+        <div className="assessment-toast">
+          {toastMessage}
+        </div>
+      )}
+      
       <div className="assessment-card">
         <h1 className="assessment-title">Self-Assessment</h1>
         <p className="assessment-note">Question {questionHistory.length}</p>
@@ -546,10 +514,16 @@ function SelfAssessment() {
         <div className="navigation-buttons">
           {canGoBack ? (
             <button className="nav-button prev-button" onClick={handlePrev}>
-              Previous
+              ← Previous
             </button>
           ) : <div />}
           <div />
+        </div>
+
+        <div className="assessment-footer-note">
+          <p className="reminder-text">
+            Take your time for accurate results
+          </p>
         </div>
       </div>
 

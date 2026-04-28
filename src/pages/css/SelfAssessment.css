@@ -465,3 +465,53 @@
   .assessment-footer { flex-direction: column; text-align: center; gap: 3rem; }
   .footer-right { align-items: center; }
 }
+
+/* Minimalist Toast */
+.assessment-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.875rem;
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+  animation: toastFade 2.5s ease forwards;
+  pointer-events: none;
+  font-weight: 500;
+}
+
+@keyframes toastFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Footer Reminder */
+.assessment-footer-note {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.reminder-text {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+}
