@@ -20,7 +20,7 @@ function SelfAssessment() {
   const SENSITIVITY = {
     speed: {
       enabled: true,
-      minMsPerQuestion: 350,
+      minMsPerQuestion: 500,
       consecutiveFastLimit: 2,
       weight: 0.35,
     },
@@ -45,8 +45,8 @@ function SelfAssessment() {
     },
     
     global: {
-      threshold: 0.35,
-      minAnswersForBlock: 3,
+      threshold: 0.25,
+      minAnswersForBlock: 2,
       warningMessage: "Please answer thoughtfully. Random selections have been detected."
     }
   };
@@ -263,7 +263,7 @@ function SelfAssessment() {
     
     const keys = (recentChoiceKeys || []).slice(-windowSize);
     const times = (recentElapsedMs || []).slice(-windowSize);
-    if (keys.length < 4) return 0;
+    if (keys.length < 3) return 0;
 
     const fastCount = times.filter((t) => typeof t === 'number' && t < fastThresholdMs).length;
     const fastRatio = fastCount / times.length;
