@@ -4,6 +4,7 @@ from app.api.services import PredictionService
 from app.api.models import PredictionResponse
 from typing import List
 import json
+import os
 
 app = FastAPI(
     title="Skin Lesion Classification API",
@@ -21,7 +22,8 @@ origins = [
     "http://localhost:5175",  # Current active port
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175"
+    "http://127.0.0.1:5175",
+    "https://web-skin-screening-mxlr9wfpc-pulaoroblrams-projects.vercel.app"
 ]
 
 app.add_middleware(
@@ -75,4 +77,5 @@ async def predict(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    port = int(os.environ.get('PORT', 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 
