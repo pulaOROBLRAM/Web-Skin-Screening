@@ -182,36 +182,7 @@ function SelfAssessment() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  useEffect(() => {
-    const detectHeadless = () => {
-      if (navigator.webdriver) return true;
-      if (navigator.plugins.length === 0) return true;
-      if (!navigator.languages || navigator.languages.length === 0) return true;
-      return false;
-    };
-    
-    if (detectHeadless() && SENSITIVITY.global.threshold > 0) {
-      resetAssessmentWithWarning('Unsupported browser environment detected. Please use a standard browser.');
-    }
-  }, []);
 
-  useEffect(() => {
-    const preventShortcuts = (e) => {
-      if (e.key === 'F12' ||
-          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'C' || e.key === 'c')) ||
-          (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 'r' || e.key === 'R'))) {
-        e.preventDefault();
-        return false;
-      }
-      if (e.altKey && e.key === 'Tab') {
-        e.preventDefault();
-        return false;
-      }
-    };
-    
-    window.addEventListener('keydown', preventShortcuts);
-    return () => window.removeEventListener('keydown', preventShortcuts);
-  }, []);
 
   if (isCheckingUpload) {
     return (
